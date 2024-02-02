@@ -25,8 +25,8 @@ pip install python3.Y-dev where Y is the version
 Make sure you go into your project names directory and change the wsgi.py file to have:
 
 import sys
-sys.path.append("/opt/FantasyROS/fantasyROSbackend")
-sys.path.append("/opt/venv/Lib/site-packages")
+sys.path.append("/opt/inlyst/project/inlyst_backend")
+sys.path.append("/opt/inlyst/venv/Lib/site-packages")
 
 
 As a root user on the server:
@@ -41,7 +41,7 @@ nano yoursite.conf
 # the upstream component nginx needs to connect to
 upstream django {
 
-    server unix:///opt/FantasyROS/fantasyROSbackend.sock; # for a file socket
+    server unix:///opt/inlyst/project/inlyst_backend/inlyst_backend.sock; # for a file socket
     # server 0.0.0.0:8001;
 }
 
@@ -58,17 +58,17 @@ server {
 
     # Django media
     #location /media  {
-    #    alias /opt/FantasyROS/static;
+    #    alias /opt/inlyst/project/inlyst_backend/static;
     #}
 
     location /static {
-        alias /opt/FantasyROS/static;
+        alias /opt/inlyst/project/inlyst_backend/static;
     }
 
     # Finally, send all non-media requests to the Django server.
     location / {
-        include /opt/FantasyROS/uwsgi_params;
-        uwsgi_pass  unix:///opt/FantasyROS/fantasyROSbackend.sock;
+        include /opt/inlyst/project/inlyst_backend/uwsgi_params;
+        uwsgi_pass  unix:///opt/inlyst/project/inlyst_backend/inlyst_backend.sock;
     }
 }
 
@@ -101,9 +101,9 @@ After=network.target
 [Service]
 User=deploy 
 Group=www-data
-WorkingDirectory=/opt/FantasyROS/
-Environment="PATH=/opt/venv/bin"
-ExecStart=/opt/venv/bin/uwsgi --ini uwsgi.ini
+WorkingDirectory=/opt/inlyst/project/inlyst_backend/
+Environment="PATH=/opt/inlyst/venv/bin"
+ExecStart=/opt/inlyst/venv/bin/uwsgi --ini uwsgi.ini
 
 [Install]
 WantedBy=multi-user.target
