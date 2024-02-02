@@ -1,0 +1,36 @@
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.db import models
+from .manager import CustomUserManager
+from django.db.models import CharField, EmailField, BooleanField,DateTimeField
+from customer.utils import get_current_date
+
+class BaseUser(AbstractBaseUser, PermissionsMixin):
+    objects = CustomUserManager()
+    first_name = CharField("First Name", max_length=255, null=True, blank=True)
+    last_name = CharField("Last Name", max_length=255, null=True, blank=True)
+    phone_number = CharField(max_length=255, null=True, blank=True)
+    email = EmailField(("Email"), unique=True)
+    is_staff = BooleanField(default=False)
+    is_superuser = BooleanField(default=False)
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
+
+    def __str__(self):
+        if self.first_name:
+            return self.first_name
+        else:
+            return "No Name"
+        
+class Customer(BaseUser):
+    created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
+    is_test = BooleanField(default=False)
+
+    def save(
+        self,
+        *args,
+        **kwargs,
+    ):
+        if not self.created_at:
+            self.created_at = get_current_date()
+        super(Customer, self).save(*args, **kwargs)
+
