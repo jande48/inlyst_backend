@@ -34,3 +34,16 @@ class Customer(BaseUser):
             self.created_at = get_current_date()
         super(Customer, self).save(*args, **kwargs)
 
+
+class Employee(BaseUser):
+    created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    def save(
+        self,
+        *args,
+        **kwargs,
+    ):
+        if not self.created_at:
+            self.created_at = get_current_date()
+        super(Employee, self).save(*args, **kwargs)
+
