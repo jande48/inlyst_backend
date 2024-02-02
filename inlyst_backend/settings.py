@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "customer",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
@@ -123,3 +124,10 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "customer.BaseUser"
+
+SHELL_PLUS = "bpython"
+SHELL_PLUS_PRE_IMPORTS = (
+    ("customer.utils", ("get_current_date")),
+    ("customer.utils", ("fdate")),
+)
+SHELL_PLUS_IMPORTS = ["import pytz", "from datetime import datetime, timedelta"]
