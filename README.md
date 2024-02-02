@@ -34,9 +34,9 @@ sudo apt-get install nginx
 sudo /etc/init.d/nginx start 
 
 cd /etc/nginx/sites-available
-nano yoursite.conf
+nano inlyst.conf
 
-# mysite_nginx.conf
+# inlyst.conf
 
 # the upstream component nginx needs to connect to
 upstream django {
@@ -74,7 +74,7 @@ server {
 
 
 then still as the root user:
-sudo ln -s /etc/nginx/sites-available/mysite_nginx.conf /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/inlyst.conf /etc/nginx/sites-enabled/
 systemctl daemon-reload
 systemctl restart nginx
 
@@ -95,7 +95,7 @@ nano uwsgi.service
 
 
 [Unit]
-Description=uWSGI instance to serve mysite
+Description=uWSGI instance to serve inlyst
 After=network.target
 
 [Service]
