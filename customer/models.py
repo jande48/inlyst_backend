@@ -1,5 +1,4 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.db import models
 from .manager import CustomUserManager
 from django.db.models import CharField, EmailField, BooleanField,DateTimeField
 from customer.utils import get_current_date
@@ -9,7 +8,7 @@ class BaseUser(AbstractBaseUser, PermissionsMixin):
     first_name = CharField("First Name", max_length=255, null=True, blank=True)
     last_name = CharField("Last Name", max_length=255, null=True, blank=True)
     phone_number = CharField(max_length=255, null=True, blank=True)
-    email = EmailField(("Email"), unique=True)
+    email = EmailField(("Email"), unique=True, null=True, blank=True)
     is_staff = BooleanField(default=False)
     is_superuser = BooleanField(default=False)
     USERNAME_FIELD = "email"
@@ -24,6 +23,7 @@ class BaseUser(AbstractBaseUser, PermissionsMixin):
 class Customer(BaseUser):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
     is_test = BooleanField(default=False)
+    device_id = CharField(max_length=255, null=True, blank=True)
 
     def save(
         self,

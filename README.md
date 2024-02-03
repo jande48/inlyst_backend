@@ -11,8 +11,6 @@ git remote add origin git@personal:jande48/new_repo.git
 Make sure to export the packages you need with pip3 freeze > requirements.txt
 Make sure you start the cron job with python manage.py crontab add
 
-
-
 Here's a summary of how to deploy:
 
 You need to have two users: root and someone else.  
@@ -62,7 +60,7 @@ server {
     #}
 
     location /static {
-        alias /opt/inlyst/project/inlyst_backend/static;
+        alias /opt/inlyst/project/inlyst_backend/inlyst_backend/static;
     }
 
     # Finally, send all non-media requests to the Django server.
