@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from .manager import CustomUserManager
+from django.db import models
 from django.db.models import (
     CharField,
     EmailField,
@@ -28,7 +29,7 @@ class BaseUser(AbstractBaseUser, PermissionsMixin):
             return "No Name"
 
 
-class Device(BaseUser):
+class Device(models.Model):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
     is_test = BooleanField(default=False)
     device_id = CharField(max_length=255, null=True, blank=True)
@@ -71,7 +72,7 @@ class Employee(BaseUser):
         super(Employee, self).save(*args, **kwargs)
 
 
-class Credentials(BaseUser):
+class Credentials(models.Model):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
     api_key = CharField(max_length=255, null=True, blank=True)
 
