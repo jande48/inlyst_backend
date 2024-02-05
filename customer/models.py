@@ -1,7 +1,14 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from .manager import CustomUserManager
-from django.db.models import CharField, EmailField, BooleanField,DateTimeField
+from django.db.models import (
+    CharField,
+    EmailField,
+    BooleanField,
+    DateTimeField,
+    ManyToManyField,
+)
 from customer.utils import get_current_date
+
 
 class BaseUser(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
@@ -19,11 +26,27 @@ class BaseUser(AbstractBaseUser, PermissionsMixin):
             return self.first_name
         else:
             return "No Name"
-        
-class Customer(BaseUser):
+
+
+class Device(BaseUser):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
     is_test = BooleanField(default=False)
     device_id = CharField(max_length=255, null=True, blank=True)
+
+    def save(
+        self,
+        *args,
+        **kwargs,
+    ):
+        if not self.created_at:
+            self.created_at = get_current_date()
+        super(Device, self).save(*args, **kwargs)
+
+
+class Customer(BaseUser):
+    created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
+    is_test = BooleanField(default=False)
+    device = ManyToManyField(to="customer.Device")
 
     def save(
         self,
@@ -47,3 +70,16 @@ class Employee(BaseUser):
             self.created_at = get_current_date()
         super(Employee, self).save(*args, **kwargs)
 
+
+class Credentials(BaseUser):
+    created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
+    api_key = CharField(max_length=255, null=True, blank=True)
+
+    def save(
+        self,
+        *args,
+        **kwargs,
+    ):
+        if not self.created_at:
+            self.created_at = get_current_date()
+        super(Credentials, self).save(*args, **kwargs)
