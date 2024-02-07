@@ -74,6 +74,7 @@ class Employee(BaseUser):
 
 class Credentials(models.Model):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
+    name = CharField(max_length=255, null=True, blank=True)
     api_key = CharField(max_length=255, null=True, blank=True)
 
     def save(
