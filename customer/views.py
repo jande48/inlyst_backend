@@ -1,9 +1,12 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from customer.models import Device, Credentials
+from customer.models import Device, Credentials, Customer
 from rest_framework import status
 from listing.models import TemplateWizard, PersonalizedWizard
 from listing.serializers import PersonalizedWizardSerializer
+from customer.serializers import CustomTokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class CustomerProfile(APIView):
 
@@ -23,7 +26,35 @@ class CustomerProfile(APIView):
 
         return Response(
             {
-                "personalized_wizard": PersonalizedWizardSerializer(personalized_wizard,many=True).data,
-                "google_maps_key": google_maps_key.api_key
+                "personalized_wizard": PersonalizedWizardSerializer(
+                    personalized_wizard, many=True
+                ).data,
+                "google_maps_key": google_maps_key.api_key,
             }
         )
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
+class SignUpView(APIView):
+
+    def post(self, request):
+        email = request.data["email"]
+        password = request.data["password"]
+        if not email or not password or len(password) < 6:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        customer = Customer(email=email)
+        customer.set_password(password)
+        customer.save()
+
+        refresh = RefreshToken.for_user(customer)
+
+        return {
+            "refresh_token": str(refresh),
+            "access_token": str(refresh.access_token),
+        }
+
