@@ -7,6 +7,8 @@ from django.db.models import (
     BooleanField,
     DateTimeField,
     ManyToManyField,
+    ForeignKey,
+    CASCADE
 )
 from customer.utils import get_current_date
 
@@ -47,7 +49,8 @@ class Device(models.Model):
 class Customer(BaseUser):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
     is_test = BooleanField(default=False)
-    device = ManyToManyField(to="customer.Device")
+    devices = ManyToManyField(to="customer.Device")
+    verified_phone = DateTimeField(null=True, blank=True)
 
     def save(
         self,
@@ -85,3 +88,19 @@ class Credentials(models.Model):
         if not self.created_at:
             self.created_at = get_current_date()
         super(Credentials, self).save(*args, **kwargs)
+
+class VerificationCode(models.Model):
+    created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
+    code = CharField(max_length=255, null=True, blank=True)
+    customer = ForeignKey(
+        Customer, on_delete=CASCADE, related_name="verification_code", null=True
+    )
+
+    def save(
+        self,
+        *args,
+        **kwargs,
+    ):
+        if not self.created_at:
+            self.created_at = get_current_date()
+        super(VerificationCode, self).save(*args, **kwargs)

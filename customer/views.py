@@ -1,12 +1,13 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from customer.models import Device, Credentials, Customer
-from rest_framework import status
+from customer.models import Device, Credentials, Customer, VerificationCode
+from rest_framework import status, permissions
 from listing.models import TemplateWizard, PersonalizedWizard
 from listing.serializers import PersonalizedWizardSerializer
 from customer.serializers import CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+
 
 class CustomerProfile(APIView):
 
@@ -37,6 +38,7 @@ class CustomerProfile(APIView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
+
 class SignUpView(APIView):
 
     def post(self, request):
@@ -46,15 +48,113 @@ class SignUpView(APIView):
             return Response(
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         customer = Customer(email=email)
         customer.set_password(password)
         customer.save()
 
         refresh = RefreshToken.for_user(customer)
 
-        return {
-            "refresh_token": str(refresh),
-            "access_token": str(refresh.access_token),
-        }
+        return Response(
+            {
+                "refresh_token": str(refresh),
+                "access_token": str(refresh.access_token),
+            }
+        )
 
+
+class CreateCustomerByPhone(APIView):
+
+    def get(self, request, phone_number=None, device_id=None):
+        from random import randint
+
+        if not phone_number or not device_id:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        customer = Customer.objects.filter(phone_number=phone_number.strip()).first()
+        if not customer:
+            customer = Customer.objects.create(phone_number=phone_number.strip())
+        device, created = Device.objects.get_or_create(device_id=str(device_id))
+        customer.devices.add(device)
+        num_of_digits_for_code = 6
+        range_start = 10 ** (num_of_digits_for_code - 1)
+        range_end = (10**num_of_digits_for_code) - 1
+        verification_code = randint(range_start, range_end)
+        VerificationCode.objects.create(customer=customer, code=verification_code)
+
+        # Here is where we would post the verification code to Twilio
+        # post_code_to_twilio(phone_number, verification_code)
+
+        
+
+        return Response({"message": "success"})
+
+
+class VerifyCustomerCode(APIView):
+
+    def get(self, request, phone_number=None, code=None):
+
+        if not phone_number or not code:
+            return Response(
+                {"message": "fail"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            customer = Customer.objects.get(phone_number=phone_number.strip())
+        except:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        code_obj = (
+            VerificationCode.objects.filter(customer=customer)
+            .order_by("-created_at")
+            .first()
+        )
+        if not code_obj:
+            return Response(
+                {"message": "fail"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if str(code) != str(code_obj.code):
+            return Response(
+                {"message": "fail"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        refresh = RefreshToken.for_user(customer)
+        return Response(
+            {
+                "message": "success",
+                "refresh_token": str(refresh),
+                "access_token": str(refresh.access_token),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class SetPassword(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, password=None):
+
+        if not password:
+            return Response(
+                {"message": "fail"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            customer = request.user
+            if not customer:
+                raise Exception("No customer")
+        except:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        customer.set_password(password)
+
+        return Response(
+            {"message": "success"},
+            status=status.HTTP_200_OK,
+        )
