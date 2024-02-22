@@ -3,7 +3,7 @@ from customer.views import (
     CustomerProfile,
     CustomTokenObtainPairView,
     SignUpView,
-    CreateCustomerByPhone,
+    CreateCustomer,
     VerifyCustomerCode,
     SetPassword
 )
@@ -25,9 +25,9 @@ urlpatterns = [
     path("api/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path(
-        "create_customer_by_phone/<str:phone_number>/<str:device_id>/",
-        CreateCustomerByPhone.as_view(),
-        name="create_customer_by_phone",
+        "create_customer/",
+        CreateCustomer.as_view(),
+        name="create_customer",
     ),
     path(
         "verify_customer_code/<str:phone_number>/<str:code>/",

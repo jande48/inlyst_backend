@@ -63,19 +63,58 @@ class SignUpView(APIView):
         )
 
 
-class CreateCustomerByPhone(APIView):
+class CreateCustomer(APIView):
 
-    def get(self, request, phone_number=None, device_id=None):
+    def post(self, request):
         from random import randint
 
-        if not phone_number or not device_id:
+        try:
+            email = request.data["email"]
+        except:
+            email = None
+        try:
+            device_id = request.data["device_id"]
+        except:
+            device_id = None
+        try:
+            phone_number = request.data["phoneNumber"]
+        except:
+            phone_number = None
+        try:
+            creation_type = request.data["creation_type"]
+        except:
+            creation_type = None
+        if not creation_type or not device_id:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        customer = Customer.objects.filter(phone_number=phone_number.strip()).first()
-        if not customer:
-            customer = Customer.objects.create(phone_number=phone_number.strip())
+        if creation_type not in ["phone", "email"]:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if creation_type == "phone" and not phone_number:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if creation_type == "email" and not email:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if creation_type == "phone":
+            customer = Customer.objects.filter(
+                phone_number=phone_number.strip()
+            ).first()
+            if not customer:
+                customer = Customer.objects.create(phone_number=phone_number.strip())
+        else:
+            customer = Customer.objects.filter(email=email.strip()).first()
+            if not customer:
+                customer = Customer.objects.create(email=email.strip())
+
         device, created = Device.objects.get_or_create(device_id=str(device_id))
         customer.devices.add(device)
         num_of_digits_for_code = 6
@@ -85,9 +124,10 @@ class CreateCustomerByPhone(APIView):
         VerificationCode.objects.create(customer=customer, code=verification_code)
 
         # Here is where we would post the verification code to Twilio
-        # post_code_to_twilio(phone_number, verification_code)
-
-        
+        # if creation_type == "phone":
+        #     post_code_to_twilio("phone", phone_number, verification_code)
+        # else :
+        #     post_code_to_twilio("email", email, verification_code)
 
         return Response({"message": "success"})
 
