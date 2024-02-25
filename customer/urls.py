@@ -30,7 +30,7 @@ urlpatterns = [
         name="create_customer",
     ),
     path(
-        "verify_customer_code/<str:phone_number>/<str:code>/",
+        "verify_customer_code/",
         VerifyCustomerCode.as_view(),
         name="verify_customer_code",
     ),

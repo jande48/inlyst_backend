@@ -134,15 +134,50 @@ class CreateCustomer(APIView):
 
 class VerifyCustomerCode(APIView):
 
-    def get(self, request, phone_number=None, code=None):
+    def post(self, request):
+        try:
+            email = request.data["email"]
+        except:
+            email = None
+        try:
+            verificationType = request.data["verificationType"]
+        except:
+            verificationType = None
+        try:
+            phone_number = request.data["phoneNumber"]
+        except:
+            phone_number = None
+        try:
+            verificationCode = request.data["verificationCode"]
+        except:
+            verificationCode = None
 
-        if not phone_number or not code:
+        if not verificationType or not verificationCode:
             return Response(
                 {"message": "fail"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if verificationType not in ["phone", "email"]:
+            return Response(
+                {"message": "fail"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if verificationType == "phone" and not phone_number:
+            return Response(
+                {"message": "fail"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if verificationType == "email" and not email:
+            return Response(
+                {"message": "fail"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
-            customer = Customer.objects.get(phone_number=phone_number.strip())
+            if verificationType == "phone":
+                customer = Customer.objects.get(phone_number=phone_number.strip())
+            else:
+                customer = Customer.objects.get(email=email.strip())
         except:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -157,7 +192,7 @@ class VerifyCustomerCode(APIView):
                 {"message": "fail"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if str(code) != str(code_obj.code):
+        if str(verificationCode) != str(code_obj.code):
             return Response(
                 {"message": "fail"},
                 status=status.HTTP_400_BAD_REQUEST,
