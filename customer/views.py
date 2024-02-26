@@ -233,3 +233,49 @@ class SetPassword(APIView):
             {"message": "success"},
             status=status.HTTP_200_OK,
         )
+
+
+class UpdateAccount(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            email = request.data["email"]
+        except:
+            email = None
+        try:
+            first_name = request.data["firstName"]
+        except:
+            first_name = None
+        try:
+            last_name = request.data["lastName"]
+        except:
+            last_name = None
+
+        if not first_name or not last_name:
+            return Response(
+                {"message": "fail"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            customer = request.user
+            if not customer:
+                raise Exception("No customer")
+        except:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        customer.first_name = first_name
+        customer.last_name = last_name
+        if email:
+            customer.email = email
+        customer.save()
+
+        return Response(
+            {
+                "message": "success",
+            },
+            status=status.HTTP_200_OK,
+        )
