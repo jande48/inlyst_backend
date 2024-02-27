@@ -7,6 +7,7 @@ from listing.serializers import PersonalizedWizardSerializer
 from customer.serializers import CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+from dateutil import parser
 
 
 class CustomerProfile(APIView):
@@ -252,7 +253,12 @@ class UpdateAccount(APIView):
         except:
             last_name = None
 
-        if not first_name or not last_name:
+        try:
+            birthday = parser.parse(request.data["birthday"])
+        except:
+            birthday = None
+
+        if not first_name or not last_name or not birthday:
             return Response(
                 {"message": "fail"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -269,6 +275,7 @@ class UpdateAccount(APIView):
 
         customer.first_name = first_name
         customer.last_name = last_name
+        customer.birthday = birthday
         if email:
             customer.email = email
         customer.save()

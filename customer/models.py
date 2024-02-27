@@ -51,6 +51,7 @@ class Customer(BaseUser):
     is_test = BooleanField(default=False)
     devices = ManyToManyField(to="customer.Device")
     verified_phone = DateTimeField(null=True, blank=True)
+    birthday = DateTimeField(null=True, blank=True)
 
     def save(
         self,
