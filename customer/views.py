@@ -106,15 +106,15 @@ class CreateCustomer(APIView):
             )
 
         if creation_type == "phone":
-            customer = Customer.objects.filter(
+            customer, created = Customer.objects.get_or_create(
                 phone_number=phone_number.strip()
-            ).first()
-            if not customer:
-                customer = Customer.objects.create(phone_number=phone_number.strip())
+            )
+            if not created:
+                return Response({"message": "That Phone Number is taken"})
         else:
-            customer = Customer.objects.filter(email=email.strip()).first()
-            if not customer:
-                customer = Customer.objects.create(email=email.strip())
+            customer, created = Customer.objects.get_or_create(email=email.strip())
+            if not created:
+                Response({"message": "That Email is taken"})
 
         device, created = Device.objects.get_or_create(device_id=str(device_id))
         customer.devices.add(device)
