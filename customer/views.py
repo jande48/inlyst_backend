@@ -8,6 +8,7 @@ from customer.serializers import CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from dateutil import parser
+from customer.utils import get_current_date
 
 
 class CustomerProfile(APIView):
@@ -96,14 +97,10 @@ class CreateCustomer(APIView):
             )
 
         if creation_type == "phone" and not phone_number:
-            return Response(
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"message": "Please enter a Phone Number"})
 
         if creation_type == "email" and not email:
-            return Response(
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"message": "Please enter an Email"})
 
         if creation_type == "phone":
             customer, created = Customer.objects.get_or_create(
@@ -126,9 +123,9 @@ class CreateCustomer(APIView):
 
         # Here is where we would post the verification code to Twilio
         # if creation_type == "phone":
-        #     post_code_to_twilio("phone", phone_number, verification_code)
+        #     post_code_to_twilio(phone_number, verification_code)
         # else :
-        #     post_code_to_twilio("email", email, verification_code)
+        #     post_code_to_sendgrid( email, verification_code)
 
         return Response({"message": "success"})
 
@@ -198,6 +195,8 @@ class VerifyCustomerCode(APIView):
                 {"message": "fail"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        customer.verified_phone_or_email = get_current_date()
+        customer.save()
         refresh = RefreshToken.for_user(customer)
         return Response(
             {
@@ -229,6 +228,7 @@ class SetPassword(APIView):
             )
 
         customer.set_password(password)
+        customer.save()
 
         return Response(
             {"message": "success"},
@@ -252,11 +252,14 @@ class UpdateAccount(APIView):
             last_name = request.data["lastName"]
         except:
             last_name = None
-
         try:
             birthday = parser.parse(request.data["birthday"])
         except:
             birthday = None
+        try:
+            phone_number = parser.parse(request.data["phoneNumber"])
+        except:
+            phone_number = None
 
         if not first_name or not last_name or not birthday:
             return Response(
@@ -276,8 +279,11 @@ class UpdateAccount(APIView):
         customer.first_name = first_name
         customer.last_name = last_name
         customer.birthday = birthday
+        customer.completed_signup = get_current_date()
         if email:
             customer.email = email
+        if phone_number:
+            customer.phone_number
         customer.save()
 
         return Response(
@@ -285,4 +291,54 @@ class UpdateAccount(APIView):
                 "message": "success",
             },
             status=status.HTTP_200_OK,
+        )
+
+
+class Login(APIView):
+
+    def post(self, request):
+        try:
+            email_or_phone = request.data["emailOrPhone"]
+        except:
+            email_or_phone = None
+        try:
+            password = request.data["password"]
+        except:
+            password = None
+
+        if not email_or_phone:
+            return Response(
+                {"message": "No phone or email provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not password:
+            return Response(
+                {"message": "No password provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            customer = Customer.objects.get(email=email_or_phone)
+        except:
+            try:
+                customer = Customer.objects.get(phone_number=email_or_phone)
+            except:
+                return Response(
+                    {"message": "No customer with that phone/email"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if customer.check_password(password.strip()):
+            refresh = RefreshToken.for_user(customer)
+            return Response(
+                {
+                    "message": "success",
+                    "refresh_token": str(refresh),
+                    "access_token": str(refresh.access_token),
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            {"message": "Incorrect password"},
+            status=status.HTTP_400_BAD_REQUEST,
         )

@@ -50,8 +50,9 @@ class Customer(BaseUser):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
     is_test = BooleanField(default=False)
     devices = ManyToManyField(to="customer.Device")
-    verified_phone = DateTimeField(null=True, blank=True)
+    verified_phone_or_email = DateTimeField(null=True, blank=True)
     birthday = DateTimeField(null=True, blank=True)
+    completed_signup = DateTimeField(null=True, blank=True)
 
     def save(
         self,

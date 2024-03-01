@@ -6,7 +6,8 @@ from customer.views import (
     CreateCustomer,
     VerifyCustomerCode,
     SetPassword,
-    UpdateAccount
+    UpdateAccount,
+    Login
 )
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
@@ -44,5 +45,10 @@ urlpatterns = [
         "update_account/",
         UpdateAccount.as_view(),
         name="update_account",
+    ),
+    path(
+        "login/",
+        Login.as_view(),
+        name="login",
     ),
 ]
