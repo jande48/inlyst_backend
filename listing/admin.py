@@ -1,12 +1,12 @@
 from django.contrib import admin
-from listing.models import TemplateWizard, PersonalizedWizard
+from listing.models import TemplateWizardStep, PersonalizedWizardStep
 
 
-@admin.register(TemplateWizard)
-class TemplateWizardAdmin(admin.ModelAdmin):
+@admin.register(TemplateWizardStep)
+class TemplateWizardStepAdmin(admin.ModelAdmin):
     list_display = ("name",)
 
 
-@admin.register(PersonalizedWizard)
-class PersonalizedWizardAdmin(admin.ModelAdmin):
+@admin.register(PersonalizedWizardStep)
+class PersonalizedWizardStepAdmin(admin.ModelAdmin):
     list_display = ("name",)

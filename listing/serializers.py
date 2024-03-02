@@ -1,10 +1,10 @@
 from rest_framework import serializers
-from listing.models import PersonalizedWizard
+from listing.models import PersonalizedWizardStep
 
 
-class PersonalizedWizardSerializer(serializers.ModelSerializer):
+class PersonalizedWizardStepSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PersonalizedWizard
+        model = PersonalizedWizardStep
         fields = [
             "index",
             "name",
