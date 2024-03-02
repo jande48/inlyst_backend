@@ -1,5 +1,7 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from customer.utils import get_user
+from rest_framework import serializers
+from customer.models import Customer
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -17,3 +19,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["subscription_type"] = subscription_type
         token["user_type"] = user_type
         return token
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "email",
+            "phone_number",
+            "completed_signup",
+            "verified_phone_or_email",
+        ]

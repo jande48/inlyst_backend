@@ -4,6 +4,7 @@ from customer.models import Device, Credentials, Customer, VerificationCode
 from rest_framework import status, permissions
 from listing.models import TemplateWizard, PersonalizedWizard
 from listing.serializers import PersonalizedWizardSerializer
+from customer.serializers import CustomerSerializer
 from customer.serializers import CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -342,3 +343,23 @@ class Login(APIView):
             {"message": "Incorrect password"},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class GetCustomer(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        print("the user is ", request.user)
+        try:
+            return Response(
+                {
+                    "message": "success",
+                    "customer": CustomerSerializer(request.user, many=False).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except:
+            return Response(
+                {"message": "failure"},
+                status=status.HTTP_200_OK,
+            )
