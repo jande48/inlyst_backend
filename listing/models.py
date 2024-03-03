@@ -53,6 +53,7 @@ class ListingThrough(models.Model):
 
 class TemplateWizardStep(models.Model):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
+    index = IntegerField(null=True, blank=True)
     name = CharField(max_length=255, null=True, blank=True)
     subtitle = TextField(null=True, blank=True)
 
@@ -84,6 +85,7 @@ class PersonalizedWizardStep(models.Model):
     name = CharField(max_length=255, null=True, blank=True)
     is_completed = DateTimeField(null=True, blank=True)
     subtitle = TextField(null=True, blank=True)
+    index = IntegerField(null=True, blank=True)
 
     def save(
         self,

@@ -42,7 +42,8 @@ class GetListings(APIView):
         return Response(
             {
                 "message": "success",
-                "listings": ListingSerializer(listings, many=True).data,
+                "listings_unfinished": ListingSerializer(listings.filter(wizard_complete__isnull=True), many=True).data,
+                "listings_finished": ListingSerializer(listings.filter(wizard_complete__isnull=False), many=True).data,
             },
             status=status.HTTP_200_OK,
         )
