@@ -1,12 +1,10 @@
 from django.urls import path
-from listing.views import (
-    GetWizardSteps
-)
+from listing.views import GetListings
 
 urlpatterns = [
     path(
-        "get_wizard_steps/",
-        GetWizardSteps.as_view(),
-        name="get-wizard-steps",
+        "get_listings/",
+        GetListings.as_view(),
+        name="get-listings",
     ),
 ]

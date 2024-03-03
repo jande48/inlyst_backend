@@ -9,11 +9,12 @@ from django.db.models import (
     TextField,
 )
 from customer.utils import get_current_date
-from customer.models import Customer, Device
+from customer.models import Customer
 
 
 class Listing(models.Model):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
+    wizard_complete = DateTimeField(null=True, blank=True)
 
     def save(
         self,
@@ -66,7 +67,7 @@ class TemplateWizardStep(models.Model):
 
 
 class PersonalizedWizardStep(models.Model):
-    template_wizard = ForeignKey(
+    template_wizard_step = ForeignKey(
         TemplateWizardStep,
         on_delete=CASCADE,
         related_name="personalized_wizard",
@@ -74,6 +75,9 @@ class PersonalizedWizardStep(models.Model):
     )
     customer = ForeignKey(
         Customer, on_delete=CASCADE, related_name="personalized_wizard", null=True
+    )
+    listing = ForeignKey(
+        Listing, on_delete=CASCADE, related_name="personalized_wizard", null=True
     )
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
     index = IntegerField(null=True, default=0)

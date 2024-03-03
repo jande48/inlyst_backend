@@ -24,4 +24,5 @@ admin.site.site_title = "Inlyst Backend- Admin"
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("customer/", include("customer.urls")),
+    path("listing/", include("listing.urls")),
 ]

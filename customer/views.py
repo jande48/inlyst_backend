@@ -20,19 +20,10 @@ class CustomerProfile(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         device, created = Device.objects.get_or_create(device_id=str(device_id))
-        template_wizards = TemplateWizardStep.objects.all()
-        for template_wizard in template_wizards:
-            personalized_wizard, created = PersonalizedWizardStep.objects.get_or_create(
-                device=device, template_wizard=template_wizard
-            )
-        personalized_wizard = PersonalizedWizardStep.objects.filter(device=device)
         google_maps_key = Credentials.objects.get(name="google_maps")
 
         return Response(
             {
-                "personalized_wizard": PersonalizedWizardStepSerializer(
-                    personalized_wizard, many=True
-                ).data,
                 "google_maps_key": google_maps_key.api_key,
             }
         )
@@ -308,11 +299,13 @@ class Login(APIView):
             password = None
 
         if not email_or_phone:
+            print("returning no email or phoen")
             return Response(
                 {"message": "No phone or email provided"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if not password:
+            print("returning no password")
             return Response(
                 {"message": "No password provided"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -324,6 +317,7 @@ class Login(APIView):
             try:
                 customer = Customer.objects.get(phone_number=email_or_phone)
             except:
+                print("returning now customer")
                 return Response(
                     {"message": "No customer with that phone/email"},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -339,6 +333,7 @@ class Login(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
+        
         return Response(
             {"message": "Incorrect password"},
             status=status.HTTP_400_BAD_REQUEST,
@@ -351,10 +346,13 @@ class GetCustomer(APIView):
     def get(self, request):
         print("the user is ", request.user)
         try:
+            refresh = RefreshToken.for_user(customer)
             return Response(
                 {
                     "message": "success",
                     "customer": CustomerSerializer(request.user, many=False).data,
+                    "refresh_token": str(refresh),
+                    "access_token": str(refresh.access_token),
                 },
                 status=status.HTTP_200_OK,
             )
