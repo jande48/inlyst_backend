@@ -6,6 +6,7 @@ from django.db.models import (
     DateTimeField,
     CASCADE,
     ForeignKey,
+    TextField,
 )
 from customer.utils import get_current_date
 from customer.models import Customer, Device
@@ -52,6 +53,7 @@ class ListingThrough(models.Model):
 class TemplateWizardStep(models.Model):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
     name = CharField(max_length=255, null=True, blank=True)
+    subtitle = TextField(null=True, blank=True)
 
     def save(
         self,
@@ -70,13 +72,14 @@ class PersonalizedWizardStep(models.Model):
         related_name="personalized_wizard",
         null=True,
     )
-    listing = ForeignKey(
-        Listing, on_delete=CASCADE, related_name="personalized_wizard", null=True
+    customer = ForeignKey(
+        Customer, on_delete=CASCADE, related_name="personalized_wizard", null=True
     )
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
     index = IntegerField(null=True, default=0)
     name = CharField(max_length=255, null=True, blank=True)
     is_completed = DateTimeField(null=True, blank=True)
+    subtitle = TextField(null=True, blank=True)
 
     def save(
         self,
