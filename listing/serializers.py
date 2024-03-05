@@ -16,7 +16,9 @@ class PersonalizedWizardStepSerializer(serializers.ModelSerializer):
 
 class ListingSerializer(serializers.ModelSerializer):
     def get_wizard_steps(self, obj):
-        steps = PersonalizedWizardStep.objects.filter(listing__pk=obj.pk)
+        steps = PersonalizedWizardStep.objects.filter(listing__pk=obj.pk).order_by(
+            "index"
+        )
         return PersonalizedWizardStepSerializer(steps, many=True).data
 
     wizard_steps = serializers.SerializerMethodField(method_name="get_wizard_steps")

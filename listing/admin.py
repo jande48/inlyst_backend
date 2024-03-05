@@ -1,5 +1,14 @@
 from django.contrib import admin
-from listing.models import TemplateWizardStep, PersonalizedWizardStep
+from listing.models import (
+    TemplateWizardStep,
+    PersonalizedWizardStep,
+    Listing,
+    ListingThrough,
+)
+
+
+admin.site.register(Listing)
+admin.site.register(ListingThrough)
 
 
 @admin.register(TemplateWizardStep)

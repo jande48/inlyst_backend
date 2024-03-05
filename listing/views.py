@@ -31,6 +31,7 @@ class GetListings(APIView):
                         listing=listing,
                         name=template_wizard_step.name,
                         subtitle=template_wizard_step.subtitle,
+                        index=template_wizard_step.index,
                     )
                 )
 
@@ -42,8 +43,12 @@ class GetListings(APIView):
         return Response(
             {
                 "message": "success",
-                "listings_unfinished": ListingSerializer(listings.filter(wizard_complete__isnull=True), many=True).data,
-                "listings_finished": ListingSerializer(listings.filter(wizard_complete__isnull=False), many=True).data,
+                "listings_unfinished": ListingSerializer(
+                    listings.filter(wizard_complete__isnull=True), many=True
+                ).data,
+                "listings_finished": ListingSerializer(
+                    listings.filter(wizard_complete__isnull=False), many=True
+                ).data,
             },
             status=status.HTTP_200_OK,
         )
