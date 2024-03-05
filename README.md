@@ -107,3 +107,9 @@ ExecStart=/opt/inlyst/venv/bin/uwsgi --ini uwsgi.ini
 WantedBy=multi-user.target
 
 
+To Reset A Postgres DB:
+sudo su postgres
+psql
+drop database your_database_name;
+create database your_database_name with owner user_you_use_in_django;
+\q

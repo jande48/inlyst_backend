@@ -333,7 +333,7 @@ class Login(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
-        
+
         return Response(
             {"message": "Incorrect password"},
             status=status.HTTP_400_BAD_REQUEST,
@@ -344,19 +344,20 @@ class GetCustomer(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        print("the user is ", request.user)
+        customer = Customer.objects.get(pk=request.user.pk)
         try:
             refresh = RefreshToken.for_user(customer)
             return Response(
                 {
                     "message": "success",
-                    "customer": CustomerSerializer(request.user, many=False).data,
+                    "customer": CustomerSerializer(customer, many=False).data,
                     "refresh_token": str(refresh),
                     "access_token": str(refresh.access_token),
                 },
                 status=status.HTTP_200_OK,
             )
-        except:
+        except Exception as e:
+            print("the error with GetCustomer is ", e)
             return Response(
                 {"message": "failure"},
                 status=status.HTTP_200_OK,
