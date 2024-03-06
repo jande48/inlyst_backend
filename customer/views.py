@@ -20,11 +20,10 @@ class CustomerProfile(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         device, created = Device.objects.get_or_create(device_id=str(device_id))
-        google_maps_key = Credentials.objects.get(name="google_maps")
 
         return Response(
             {
-                "google_maps_key": google_maps_key.api_key,
+                "message": "success",
             }
         )
 

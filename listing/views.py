@@ -6,9 +6,10 @@ from listing.models import (
     Listing,
     ListingThrough,
 )
-from customer.models import Customer
+from customer.models import Customer, Credentials
 from listing.serializers import ListingSerializer
 from rest_framework import status, permissions
+import requests
 
 
 class GetListings(APIView):
@@ -50,5 +51,34 @@ class GetListings(APIView):
                     listings.filter(wizard_complete__isnull=False), many=True
                 ).data,
             },
+            status=status.HTTP_200_OK,
+        )
+
+
+class GetAddresses(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            address_text = request.data["addressText"]
+        except:
+            address_text = None
+        try:
+            google_maps_key = Credentials.objects.get(name="google_maps")
+        except:
+            return Response(
+                {"message": "couldnt get google maps key"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            url = f"https://maps.googleapis.com/maps/api/place/autocomplete/json?input={address_text}&key={google_maps_key.api_key}"
+            response = requests.get(url).json()
+        except:
+            return Response(
+                {"message": "couldnt get google maps api call"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {"message": "success", "predictions": response["predictions"]},
             status=status.HTTP_200_OK,
         )
