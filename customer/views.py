@@ -329,12 +329,15 @@ class Login(APIView):
                     "message": "success",
                     "refresh_token": str(refresh),
                     "access_token": str(refresh.access_token),
+                    "customer": CustomerSerializer(customer, many=False).data,
                 },
                 status=status.HTTP_200_OK,
             )
 
         return Response(
-            {"message": "Incorrect password"},
+            {
+                "message": "Incorrect password",
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
 
