@@ -1,5 +1,5 @@
 from django.urls import path
-from listing.views import GetListings, GetAddresses
+from listing.views import GetListings, GetAddresses,SetAddress
 
 urlpatterns = [
     path(
@@ -10,6 +10,11 @@ urlpatterns = [
     path(
         "get_addresses/",
         GetAddresses.as_view(),
-        name="get-get_addresses",
+        name="get_addresses",
+    ),
+    path(
+        "set_address_to_listing/",
+        SetAddress.as_view(),
+        name="set_addresses",
     ),
 ]

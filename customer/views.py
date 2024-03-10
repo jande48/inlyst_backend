@@ -2,8 +2,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from customer.models import Device, Credentials, Customer, VerificationCode
 from rest_framework import status, permissions
-from listing.models import TemplateWizardStep, PersonalizedWizardStep
-from listing.serializers import PersonalizedWizardStepSerializer
 from customer.serializers import CustomerSerializer
 from customer.serializers import CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -280,6 +278,7 @@ class UpdateAccount(APIView):
         return Response(
             {
                 "message": "success",
+                "customer": CustomerSerializer(customer, many=False).data,
             },
             status=status.HTTP_200_OK,
         )

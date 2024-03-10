@@ -5,11 +5,15 @@ from listing.models import (
     PersonalizedWizardStep,
     Listing,
     ListingThrough,
+    Property,
 )
-from customer.models import Customer, Credentials
-from listing.serializers import ListingSerializer
+from customer.models import Customer, Credentials, PreciselyAccessToken
+from listing.serializers import ListingSerializer, PropertySerializer
 from rest_framework import status, permissions
 import requests
+from customer.utils import get_current_date
+from datetime import timedelta
+from listing.utils import populate_property_object
 
 
 class GetListings(APIView):
@@ -33,6 +37,7 @@ class GetListings(APIView):
                         name=template_wizard_step.name,
                         subtitle=template_wizard_step.subtitle,
                         index=template_wizard_step.index,
+                        num_of_steps=template_wizard_step.num_of_steps,
                     )
                 )
 
@@ -70,6 +75,7 @@ class GetAddresses(APIView):
                 {"message": "couldnt get google maps key"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
         try:
             url = f"https://maps.googleapis.com/maps/api/place/autocomplete/json?input={address_text}&key={google_maps_key.api_key}"
             response = requests.get(url).json()
@@ -80,5 +86,127 @@ class GetAddresses(APIView):
             )
         return Response(
             {"message": "success", "predictions": response["predictions"]},
+            status=status.HTTP_200_OK,
+        )
+
+
+class SetAddress(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            chosenAddress = request.data["chosenAddress"]
+        except:
+            return Response(
+                {"message": "couldnt get chosen addres"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            listingID = request.data["listingID"]
+        except:
+            return Response(
+                {"message": "couldnt get list id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            customer = Customer.objects.get(pk=request.user.pk)
+        except:
+            return Response(
+                {"message": "couldnt get customer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if (
+            PreciselyAccessToken.objects.filter(
+                customer=customer, expires_at__gt=get_current_date()
+            ).count()
+            > 0
+        ):
+            access_token = (
+                PreciselyAccessToken.objects.filter(
+                    customer=customer, expires_at__gt=get_current_date()
+                )
+                .order_by("-expires_at")
+                .first()
+                .token
+            )
+        else:
+            try:
+                precisely_key = (
+                    Credentials.objects.filter(name="precisely_key").first().api_key
+                )
+                precisely_secret = (
+                    Credentials.objects.filter(name="precisely_secret").first().api_key
+                )
+            except:
+                return Response(
+                    {"message": "couldnt get precisely creds"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            try:
+                response = requests.post(
+                    "https://api.precisely.com/oauth/token",
+                    data={"grant_type": "client_credentials"},
+                    auth=(precisely_key, precisely_secret),
+                ).json()
+            except:
+                return Response(
+                    {"message": "couldnt get precisely oauth token"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            access_token = response["access_token"]
+            PreciselyAccessToken.objects.create(
+                token=access_token,
+                customer=customer,
+                expires_at=(
+                    get_current_date() + timedelta(seconds=int(response["expiresIn"]))
+                ),
+            )
+
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {access_token}",
+        }
+        try:
+            r = requests.get(
+                f"https://api.precisely.com/property/v2/attributes/byaddress?address={chosenAddress}&attributes=all",
+                headers=headers,
+            ).json()
+        except:
+            return Response(
+                {"message": "api call failed to precisely"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        personalized_wizard_step = PersonalizedWizardStep.objects.get(
+            customer=customer, template_wizard_step__index=1
+        )
+        personalized_wizard_step.last_step_completed = 1
+        personalized_wizard_step.save()
+        listing = Listing.objects.get(pk=listingID)
+        try:
+            r["propertyAttributes"]["pbKey"]
+        except:
+            print("there was  problem with pk key \n\n", r)
+        p, created = Property.objects.get_or_create(
+            listing=listing, pbKey=r["propertyAttributes"]["pbKey"]
+        )
+        pa = r["propertyAttributes"]
+        p = populate_property_object(p, pa)
+        p.save()
+
+        listing_throughs = ListingThrough.objects.filter(customer=customer)
+        listings_unfinished = Listing.objects.filter(
+            pk__in=list(listing_throughs.values_list("listing__pk", flat=True)),
+            wizard_complete__isnull=True,
+        )
+        print("the listings unfinished are", listings_unfinished)
+
+        return Response(
+            {
+                "message": "success",
+                "listings_unfinished": ListingSerializer(
+                    listings_unfinished, many=True
+                ).data,
+            },
             status=status.HTTP_200_OK,
         )
