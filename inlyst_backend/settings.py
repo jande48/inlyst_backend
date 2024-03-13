@@ -149,5 +149,6 @@ SHELL_PLUS = "bpython"
 SHELL_PLUS_PRE_IMPORTS = (
     ("customer.utils", ("get_current_date")),
     ("customer.utils", ("fdate")),
+    ("listing.utils", ("resetWizardAll")),
 )
 SHELL_PLUS_IMPORTS = ["import pytz", "from datetime import datetime, timedelta"]

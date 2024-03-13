@@ -1,5 +1,3 @@
-
-
 def populate_property_object(p, pa):
     try:
         p.property_type = pa["propType"]
@@ -8,7 +6,7 @@ def populate_property_object(p, pa):
     try:
         p.building_type = pa["buildgType"]["value"]
     except:
-        p.building_type =None
+        p.building_type = None
     try:
         p.square_footage = int(float(pa["buildgSqFt"]))
     except:
@@ -16,7 +14,7 @@ def populate_property_object(p, pa):
     try:
         p.living_square_footage = int(float(pa["livingSqFt"]))
     except:
-        p.living_square_footage =None
+        p.living_square_footage = None
     try:
         p.property_square_footage = int(float(pa["propSqFt"]))
     except:
@@ -24,7 +22,7 @@ def populate_property_object(p, pa):
     try:
         p.parking_square_footage = int(float(pa["parkingSqFt"]))
     except:
-        p.parking_square_footage =None
+        p.parking_square_footage = None
     try:
         p.property_acres = pa["propAcres"]
     except:
@@ -32,7 +30,7 @@ def populate_property_object(p, pa):
     try:
         p.land_use = pa["landUse"]["value"]
     except:
-        p.land_use =None
+        p.land_use = None
     try:
         p.roof_cover_type = pa["roofCoverType"]["value"]
     except:
@@ -84,7 +82,7 @@ def populate_property_object(p, pa):
     try:
         p.tax_amount = pa["taxAmount"]
     except:
-        p.tax_amount =None
+        p.tax_amount = None
     try:
         p.sales_date = pa["salesDate"]
     except:
@@ -154,3 +152,22 @@ def populate_property_object(p, pa):
     except:
         p.owner_type = None
     return p
+
+
+def write_to_file(path, to_print):
+    from inlyst_backend.settings import (
+        BASE_DIR,
+    )
+
+    log_path = f"{BASE_DIR}/inlyst_backend/{path}"
+    fd = open(log_path, "a")
+    fd.write(to_print)
+    fd.flush()
+    fd.close()
+
+
+def resetWizardAll():
+    from listing.models import PersonalizedWizardStep
+    PersonalizedWizardStep.objects.all().update(
+        is_completed=None, last_step_completed=0
+    )

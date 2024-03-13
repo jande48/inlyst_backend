@@ -14,6 +14,7 @@ import requests
 from customer.utils import get_current_date
 from datetime import timedelta
 from listing.utils import populate_property_object
+from listing.utils import write_to_file
 
 
 class GetListings(APIView):
@@ -177,6 +178,8 @@ class SetAddress(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        logging_file_path = "logging/address_response_from_precisely.log"
+        write_to_file(logging_file_path, f"\n\nResponse from Precisely:\n{r}\n")
         personalized_wizard_step = PersonalizedWizardStep.objects.get(
             customer=customer, template_wizard_step__index=1
         )
@@ -199,8 +202,6 @@ class SetAddress(APIView):
             pk__in=list(listing_throughs.values_list("listing__pk", flat=True)),
             wizard_complete__isnull=True,
         )
-        print("the listings unfinished are", listings_unfinished)
-
         return Response(
             {
                 "message": "success",
