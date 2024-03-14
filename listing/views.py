@@ -211,3 +211,48 @@ class SetAddress(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class GetChatGPTDescription(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from openai import OpenAI
+
+        try:
+            listingID = request.data["listingID"]
+        except:
+            return Response(
+                {"message": "couldnt get list id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        listing = Listing.objects.get(pk=listingID)
+        property = Property.objects.filter(listing=listing).first()
+
+        if not property:
+            return Response(
+                {"message": "couldnt get property"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        openai_key = Credentials.objects.get(name="chatGPT").api_key
+        client = OpenAI(api_key=openai_key)
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a poetic assistant, skilled in describing real estate properties with creative flair.",
+                },
+                {
+                    "role": "user",
+                    "content": f"Write a description for a {property.land_use} at {property.main_address_line}. It has {property.bedrooms} bedrooms and {property.baths} with {property.living_square_footage} living square feet and {property.property_square_footage} property square feet.  It is located in the {property.subdivision_name} neighborhood. It was built in {property.built_year}",
+                },
+            ],
+        )
+        description = completion.choices[0].message.content
+
+        return Response(
+            {"message": "success", "description": description},
+            status=status.HTTP_200_OK,
+        )

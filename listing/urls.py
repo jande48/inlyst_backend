@@ -1,5 +1,5 @@
 from django.urls import path
-from listing.views import GetListings, GetAddresses,SetAddress
+from listing.views import GetListings, GetAddresses,SetAddress, GetChatGPTDescription
 
 urlpatterns = [
     path(
@@ -16,5 +16,10 @@ urlpatterns = [
         "set_address_to_listing/",
         SetAddress.as_view(),
         name="set_addresses",
+    ),
+    path(
+        "get_ChatGPT_description/",
+        GetChatGPTDescription.as_view(),
+        name="get_ChatGPT_description",
     ),
 ]
