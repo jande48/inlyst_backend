@@ -154,3 +154,39 @@ class Property(models.Model):
         if not self.created_at:
             self.created_at = get_current_date()
         super(Property, self).save(*args, **kwargs)
+
+
+class TemplateKeyword(models.Model):
+    created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
+    name = CharField(max_length=255, null=True, blank=True)
+    mystatemls_name = CharField(max_length=255, null=True, blank=True)
+
+    def save(
+        self,
+        *args,
+        **kwargs,
+    ):
+        if not self.created_at:
+            self.created_at = get_current_date()
+        super(TemplateKeyword, self).save(*args, **kwargs)
+
+
+class PersonalizedKeyword(models.Model):
+    created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
+    name = CharField(max_length=255, null=True, blank=True)
+    mystatemls_name = CharField(max_length=255, null=True, blank=True)
+    template_keyword = ForeignKey(
+        TemplateKeyword,
+        on_delete=CASCADE,
+        related_name="personalized_keyword",
+        null=True,
+    )
+
+    def save(
+        self,
+        *args,
+        **kwargs,
+    ):
+        if not self.created_at:
+            self.created_at = get_current_date()
+        super(PersonalizedKeyword, self).save(*args, **kwargs)
