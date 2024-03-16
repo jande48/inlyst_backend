@@ -5,11 +5,13 @@ from listing.models import (
     PersonalizedWizardStep,
     Listing,
     ListingThrough,
+    TemplateKeyword,
+    PersonalizedKeyword,
 )
 from customer.models import Customer, Credentials, PreciselyAccessToken
 from listing.serializers import ListingSerializer
 from rest_framework import status, permissions
-import requests
+import requests, re
 from customer.utils import get_current_date
 from datetime import timedelta
 from listing.utils import populate_property_object
@@ -253,25 +255,95 @@ class GetChatGPTDescription(APIView):
         )
 
 
-# class SetListingValues(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
+class SetListingValues(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-#     def post(self, request):
-#         try:
-#             listingID = request.data["listingID"]
-#         except:
-#             return Response(
-#                 {"message": "couldnt get list id"},
-#                 status=status.HTTP_400_BAD_REQUEST,
-#             )
-#         try:
-#             listing = Listing.objects.get(pk=listingID)
-#         except:
-#             return Response(
-#                 {"message": "couldnt get listing"},
-#                 status=status.HTTP_400_BAD_REQUEST,
-#             )
-#         return Response(
-#             {"message": "success", "description": description},
-#             status=status.HTTP_200_OK,
-#         )
+    def post(self, request):
+        try:
+            listingID = request.data["listingID"]
+        except:
+            return Response(
+                {"message": "couldnt get list id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            listing = Listing.objects.get(pk=listingID)
+        except:
+            return Response(
+                {"message": "couldnt get listing"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            sqft = request.data["sqft"]
+            listing.square_footage = int(re.sub("\D", "", sqft))
+        except:
+            pass
+        try:
+            lotsqft = request.data["lotsqft"]
+            listing.living_square_footage = int(re.sub("\D", "", lotsqft))
+        except:
+            pass
+        try:
+            bedrooms = request.data["bedrooms"]
+            listing.bedrooms = int(bedrooms)
+        except:
+            pass
+        try:
+            bathRooms = request.data["bathRooms"]
+            listing.baths = bathRooms
+        except:
+            pass
+        try:
+            propertyType = request.data["propertyType"]
+            listing.property_type = propertyType
+        except:
+            pass
+        try:
+            builtYear = request.data["builtYear"]
+            listing.built_year = int(re.sub("\D", "", builtYear))
+        except:
+            pass
+
+        listing.save()
+
+        wizard_index = request.data["wizard_index"]
+        last_step_completed = request.data["last_step_completed"]
+        PersonalizedWizardStep.objects.filter(
+            listing=listing, index=wizard_index
+        ).update(last_step_completed=last_step_completed)
+
+        try:
+            keyWords = request.data["keyWords"]
+        except:
+            keyWords = None
+
+        if keyWords and len(keyWords) > 0:
+            current_keyword_pks = []
+            for keyWord in keyWords:
+                try:
+                    template_keyword = TemplateKeyword.objects.get(
+                        mystatemls_name=keyWord["mystatemls_name"]
+                    )
+                except:
+                    print("Could not get template keyword from this: ", keyWord)
+                    continue
+
+                peronalized_keyword, created = (
+                    PersonalizedKeyword.objects.get_or_create(
+                        listing=listing, template_keyword=template_keyword
+                    )
+                )
+                current_keyword_pks.append(peronalized_keyword.pk)
+                PersonalizedKeyword.objects.filter(listing=listing).exclude(
+                    pk__in=current_keyword_pks
+                ).delete()
+        return Response(
+            {
+                "message": "success",
+                "listings_unfinished": ListingSerializer(
+                    Listing.objects.filter(pk=listing.pk), many=True
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )

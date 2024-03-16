@@ -166,6 +166,12 @@ class PersonalizedKeyword(models.Model):
         related_name="personalized_keyword",
         null=True,
     )
+    listing = ForeignKey(
+        Listing,
+        on_delete=CASCADE,
+        related_name="personalized_keyword",
+        null=True,
+    )
 
     def save(
         self,
@@ -174,4 +180,8 @@ class PersonalizedKeyword(models.Model):
     ):
         if not self.created_at:
             self.created_at = get_current_date()
+        if not self.name and self.template_keyword:
+            self.name = self.template_keyword.name
+        if not self.mystatemls_name and self.template_keyword:
+            self.mystatemls_name = self.template_keyword.mystatemls_name
         super(PersonalizedKeyword, self).save(*args, **kwargs)
