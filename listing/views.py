@@ -5,10 +5,9 @@ from listing.models import (
     PersonalizedWizardStep,
     Listing,
     ListingThrough,
-    Property,
 )
 from customer.models import Customer, Credentials, PreciselyAccessToken
-from listing.serializers import ListingSerializer, PropertySerializer
+from listing.serializers import ListingSerializer
 from rest_framework import status, permissions
 import requests
 from customer.utils import get_current_date
@@ -190,12 +189,9 @@ class SetAddress(APIView):
             r["propertyAttributes"]["pbKey"]
         except:
             print("there was  problem with pk key \n\n", r)
-        p, created = Property.objects.get_or_create(
-            listing=listing, pbKey=r["propertyAttributes"]["pbKey"]
-        )
         pa = r["propertyAttributes"]
-        p = populate_property_object(p, pa)
-        p.save()
+        listing = populate_property_object(listing, pa)
+        listing.save()
 
         listing_throughs = ListingThrough.objects.filter(customer=customer)
         listings_unfinished = Listing.objects.filter(
@@ -228,11 +224,10 @@ class GetChatGPTDescription(APIView):
             )
 
         listing = Listing.objects.get(pk=listingID)
-        property = Property.objects.filter(listing=listing).first()
 
-        if not property:
+        if not listing:
             return Response(
-                {"message": "couldnt get property"},
+                {"message": "couldnt get listing"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         openai_key = Credentials.objects.get(name="chatGPT").api_key
@@ -246,7 +241,7 @@ class GetChatGPTDescription(APIView):
                 },
                 {
                     "role": "user",
-                    "content": f"Write a description for a {property.land_use} at {property.main_address_line}. It has {property.bedrooms} bedrooms and {property.baths} with {property.living_square_footage} living square feet and {property.property_square_footage} property square feet.  It is located in the {property.subdivision_name} neighborhood. It was built in {property.built_year}",
+                    "content": f"Write a description for a {listing.land_use} at {listing.main_address_line}. It has {listing.bedrooms} bedrooms and {listing.baths} with {listing.living_square_footage} living square feet and {listing.property_square_footage} property square feet.  It is located in the {listing.subdivision_name} neighborhood. It was built in {listing.built_year}",
                 },
             ],
         )
@@ -256,3 +251,27 @@ class GetChatGPTDescription(APIView):
             {"message": "success", "description": description},
             status=status.HTTP_200_OK,
         )
+
+
+# class SetListingValues(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def post(self, request):
+#         try:
+#             listingID = request.data["listingID"]
+#         except:
+#             return Response(
+#                 {"message": "couldnt get list id"},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+#         try:
+#             listing = Listing.objects.get(pk=listingID)
+#         except:
+#             return Response(
+#                 {"message": "couldnt get listing"},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+#         return Response(
+#             {"message": "success", "description": description},
+#             status=status.HTTP_200_OK,
+#         )

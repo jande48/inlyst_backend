@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from listing.models import PersonalizedWizardStep, Listing, Property
+from listing.models import PersonalizedWizardStep, Listing
 
 
 class PersonalizedWizardStepSerializer(serializers.ModelSerializer):
@@ -16,10 +16,21 @@ class PersonalizedWizardStepSerializer(serializers.ModelSerializer):
         ]
 
 
-class PropertySerializer(serializers.ModelSerializer):
+class ListingSerializer(serializers.ModelSerializer):
+    def get_wizard_steps(self, obj):
+        steps = PersonalizedWizardStep.objects.filter(listing__pk=obj.pk).order_by(
+            "index"
+        )
+        return PersonalizedWizardStepSerializer(steps, many=True).data
+
+    wizard_steps = serializers.SerializerMethodField(method_name="get_wizard_steps")
+
     class Meta:
-        model = Property
+        model = Listing
         fields = [
+            "pk",
+            "wizard_steps",
+            "wizard_complete",
             "pk",
             "pbKey",
             "property_type",
@@ -61,22 +72,3 @@ class PropertySerializer(serializers.ModelSerializer):
             "owner_last_name",
             "owner_type",
         ]
-
-
-class ListingSerializer(serializers.ModelSerializer):
-    def get_wizard_steps(self, obj):
-        steps = PersonalizedWizardStep.objects.filter(listing__pk=obj.pk).order_by(
-            "index"
-        )
-        return PersonalizedWizardStepSerializer(steps, many=True).data
-
-    def get_properties(self, obj):
-        properties = Property.objects.filter(listing__pk=obj.pk).order_by("-created_at")
-        return PropertySerializer(properties, many=True).data
-
-    wizard_steps = serializers.SerializerMethodField(method_name="get_wizard_steps")
-    properties = serializers.SerializerMethodField(method_name="get_properties")
-
-    class Meta:
-        model = Listing
-        fields = ["pk", "wizard_steps", "wizard_complete", "properties"]

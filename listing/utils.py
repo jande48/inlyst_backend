@@ -151,6 +151,10 @@ def populate_property_object(p, pa):
         p.owner_type = pa["ownerType"]
     except:
         p.owner_type = None
+    try:
+        p.pbKey = pa["pbKey"]
+    except:
+        p.pkKey = None
     return p
 
 
