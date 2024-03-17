@@ -4,9 +4,10 @@ from django.db.models import (
     IntegerField,
     BooleanField,
     DateTimeField,
-    CASCADE,
     ForeignKey,
     TextField,
+    ImageField,
+    CASCADE,
 )
 from customer.utils import get_current_date
 from customer.models import Customer
@@ -186,3 +187,42 @@ class PersonalizedKeyword(models.Model):
         if not self.mystatemls_name and self.template_keyword:
             self.mystatemls_name = self.template_keyword.mystatemls_name
         super(PersonalizedKeyword, self).save(*args, **kwargs)
+
+
+def photo_directory_path(instance, filename):
+    import uuid
+
+    random_file_name = "".join([str(uuid.uuid4().hex[:6]), filename])
+    return "/photos/user_{0}/{1}".format(instance.user.pk, random_file_name)
+
+
+class Photo(models.Model):
+    created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
+    image = ImageField("Photo", upload_to=photo_directory_path)
+    name = CharField(max_length=255, null=True, blank=True)
+    listing = ForeignKey(
+        Listing,
+        on_delete=CASCADE,
+        related_name="photo",
+        null=True,
+    )
+
+    def save(
+        self,
+        *args,
+        **kwargs,
+    ):
+        if not self.created_at:
+            self.created_at = get_current_date()
+        super(Photo, self).save(*args, **kwargs)
+
+    def delete(self):
+        import boto3
+
+        s3_client = boto3.client("s3")
+        response = s3_client.delete_object(Bucket="inlyst-photos", Key=self.image.name)
+        if response["ResponseMetadata"]["HTTPStatusCode"] == 204:
+            print("Photo was deleted from S3 bucket successfully")
+        else:
+            print("Photo was not successfully deleted from S3 bucket")
+        super(Photo, self).delete()
