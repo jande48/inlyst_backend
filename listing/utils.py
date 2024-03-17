@@ -1,3 +1,6 @@
+import boto3
+
+
 def populate_property_object(p, pa):
     try:
         p.property_type = pa["propType"]
@@ -516,3 +519,13 @@ def get_keyword_object():
         {"mystatemls_name": "owner_occupancy_required", "name": "Owner Occupancy"},
         {"mystatemls_name": "sublot_allowed", "name": "Sublot Allowed"},
     ]
+
+
+# def upload_photo():
+#     linode_obj_config = {
+#     "aws_access_key_id": "[access-key]",
+#     "aws_secret_access_key": "[secret-key]",
+#     "endpoint_url": "[cluster-url]",
+# }
+
+# client = boto3.client("s3", **linode_obj_config)

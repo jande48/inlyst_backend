@@ -54,6 +54,7 @@ class Listing(models.Model):
     owner_middle_name = TextField(null=True, blank=True)
     owner_last_name = TextField(null=True, blank=True)
     owner_type = TextField(null=True, blank=True)
+    description = TextField(null=True, blank=True)
 
     def save(
         self,

@@ -247,10 +247,23 @@ class GetChatGPTDescription(APIView):
                 },
             ],
         )
-        description = completion.choices[0].message.content
+        try:
+            description = completion.choices[0].message.content
+            listing.description = description
+            listing.save()
+        except:
+            return Response(
+                {"message": "couldnt get description"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         return Response(
-            {"message": "success", "description": description},
+            {
+                "message": "success",
+                "listings_unfinished": ListingSerializer(
+                    Listing.objects.filter(pk=listing.pk), many=True
+                ).data,
+            },
             status=status.HTTP_200_OK,
         )
 

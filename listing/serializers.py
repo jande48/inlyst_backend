@@ -15,14 +15,11 @@ class PersonalizedWizardStepSerializer(serializers.ModelSerializer):
             "last_step_completed",
         ]
 
+
 class PersonalizedKeywordSerializer(serializers.ModelSerializer):
     class Meta:
         model = PersonalizedKeyword
-        fields = [
-            "pk",
-            "name",
-            "mystatemls_name"
-        ]
+        fields = ["pk", "name", "mystatemls_name"]
 
 
 class ListingSerializer(serializers.ModelSerializer):
@@ -31,7 +28,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "index"
         )
         return PersonalizedWizardStepSerializer(steps, many=True).data
-    
+
     def get_keywords(self, obj):
         keywords = PersonalizedKeyword.objects.filter(listing__pk=obj.pk).order_by(
             "created_at"
@@ -40,7 +37,6 @@ class ListingSerializer(serializers.ModelSerializer):
 
     wizard_steps = serializers.SerializerMethodField(method_name="get_wizard_steps")
     keywords = serializers.SerializerMethodField(method_name="get_keywords")
-    
 
     class Meta:
         model = Listing
@@ -88,5 +84,6 @@ class ListingSerializer(serializers.ModelSerializer):
             "owner_middle_name",
             "owner_last_name",
             "owner_type",
-            "keywords"
+            "keywords",
+            "description",
         ]
