@@ -133,7 +133,21 @@ USE_I18N = True
 
 USE_TZ = True
 
+LINODE_BUCKET = "inlyst-photos"
+LINODE_BUCKET_URL = "inlyst-photos.us-southeast-1.linodeobjects.com"
+LINODE_BUCKET_REGION = "us-southeast-1"
+LINODE_BUCKET_ACCESS_KEY = env("LINODE_BUCKET_ACCESS_KEY")
+LINODE_BUCKET_SECRET_KEY = env("LINODE_BUCKET_SECRET_KEY")
 
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+AWS_S3_ENDPOINT_URL = f"https://{LINODE_BUCKET_REGION}.linodeobjects.com"
+AWS_ACCESS_KEY_ID = LINODE_BUCKET_ACCESS_KEY
+AWS_SECRET_ACCESS_KEY = LINODE_BUCKET_SECRET_KEY
+AWS_S3_REGION_NAME = LINODE_BUCKET_REGION
+AWS_S3_USE_SSL = True
+AWS_STORAGE_BUCKET_NAME = LINODE_BUCKET
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 

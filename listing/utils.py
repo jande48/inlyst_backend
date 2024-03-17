@@ -1,6 +1,3 @@
-import boto3
-
-
 def populate_property_object(p, pa):
     try:
         p.property_type = pa["propType"]
@@ -521,11 +518,16 @@ def get_keyword_object():
     ]
 
 
-# def upload_photo():
-#     linode_obj_config = {
-#     "aws_access_key_id": "[access-key]",
-#     "aws_secret_access_key": "[secret-key]",
-#     "endpoint_url": "[cluster-url]",
-# }
+def upload_photo():
+    from customer.models import Credentials
+    import boto3
+    
+    access_key = Credentials.objects.get(name="linode_object_storage_accress")
+    secret_key = Credentials.objects.get(name="linode_object_storage_secret")
+    linode_obj_config = {
+        "aws_access_key_id": access_key,
+        "aws_secret_access_key": secret_key,
+        "endpoint_url": "https://us-southeast-1.linodeobjects.com",
+    }
 
-# client = boto3.client("s3", **linode_obj_config)
+    client = boto3.client("s3", **linode_obj_config)
