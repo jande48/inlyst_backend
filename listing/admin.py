@@ -3,11 +3,14 @@ from listing.models import (
     TemplateWizardStep,
     PersonalizedWizardStep,
     Listing,
-    ListingThrough,)
+    ListingThrough,
+    File,
+)
 
 
 admin.site.register(Listing)
 admin.site.register(ListingThrough)
+admin.site.register(File)
 
 
 @admin.register(TemplateWizardStep)

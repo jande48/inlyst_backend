@@ -1,3 +1,11 @@
+def capitalize_first_letter(words):
+    try:
+        words_split = words.split(" ")
+        return " ".join(elem.capitalize() for elem in words_split)
+    except:
+        return words
+
+
 def populate_property_object(p, pa):
     try:
         p.property_type = pa["propType"]
@@ -28,7 +36,7 @@ def populate_property_object(p, pa):
     except:
         p.property_acres = None
     try:
-        p.land_use = pa["landUse"]["value"]
+        p.land_use = capitalize_first_letter(pa["landUse"]["value"])
     except:
         p.land_use = None
     try:
@@ -36,7 +44,7 @@ def populate_property_object(p, pa):
     except:
         p.roof_cover_type = None
     try:
-        p.subdivision_name = pa["subdivision"]
+        p.subdivision_name = capitalize_first_letter(pa["subdivision"])
     except:
         p.subdivision_name = None
     try:
@@ -96,11 +104,13 @@ def populate_property_object(p, pa):
     except:
         p.foundation = None
     try:
-        p.tax_address = pa["taxAddress"]
+        p.tax_address = capitalize_first_letter(pa["taxAddress"])
     except:
         p.tax_address = None
     try:
-        p.main_address_line = pa["formattedTaxAddress"]["mainAddressLine"]
+        p.main_address_line = capitalize_first_letter(
+            pa["formattedTaxAddress"]["mainAddressLine"]
+        )
     except:
         p.main_address_line = None
     try:
@@ -108,7 +118,7 @@ def populate_property_object(p, pa):
     except:
         p.address_number = None
     try:
-        p.street_name = pa["formattedTaxAddress"]["streetName"]
+        p.street_name = capitalize_first_letter(pa["formattedTaxAddress"]["streetName"])
     except:
         p.street_name = None
     try:
@@ -116,7 +126,7 @@ def populate_property_object(p, pa):
     except:
         p.street_type = None
     try:
-        p.city = pa["formattedTaxAddress"]["city"]
+        p.city = capitalize_first_letter(pa["formattedTaxAddress"]["city"])
     except:
         p.city = None
     try:
@@ -516,18 +526,3 @@ def get_keyword_object():
         {"mystatemls_name": "owner_occupancy_required", "name": "Owner Occupancy"},
         {"mystatemls_name": "sublot_allowed", "name": "Sublot Allowed"},
     ]
-
-
-def upload_photo():
-    from customer.models import Credentials
-    import boto3
-    
-    access_key = Credentials.objects.get(name="linode_object_storage_accress")
-    secret_key = Credentials.objects.get(name="linode_object_storage_secret")
-    linode_obj_config = {
-        "aws_access_key_id": access_key,
-        "aws_secret_access_key": secret_key,
-        "endpoint_url": "https://us-southeast-1.linodeobjects.com",
-    }
-
-    client = boto3.client("s3", **linode_obj_config)

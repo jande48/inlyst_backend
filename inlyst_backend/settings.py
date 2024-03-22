@@ -132,7 +132,7 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
+MEDIA_ROOT = str(BASE_DIR) + "/static/media"
 LINODE_BUCKET = "inlyst-photos"
 LINODE_BUCKET_URL = "inlyst-photos.us-southeast-1.linodeobjects.com"
 LINODE_BUCKET_REGION = "us-southeast-1"
@@ -148,10 +148,11 @@ AWS_SECRET_ACCESS_KEY = LINODE_BUCKET_SECRET_KEY
 AWS_S3_REGION_NAME = LINODE_BUCKET_REGION
 AWS_S3_USE_SSL = True
 AWS_STORAGE_BUCKET_NAME = LINODE_BUCKET
+AWS_DEFAULT_ACL = "authenticated-read"
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = env("STATIC_ROOT")
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

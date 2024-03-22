@@ -5,6 +5,7 @@ from listing.views import (
     SetAddress,
     GetChatGPTDescription,
     SetListingValues,
+    UploadListingFiles,
 )
 
 urlpatterns = [
@@ -32,5 +33,10 @@ urlpatterns = [
         "set_listing_values/",
         SetListingValues.as_view(),
         name="set_listing_values",
+    ),
+    path(
+        "upload_listing_photos/",
+        UploadListingFiles.as_view(),
+        name="upload_listing_photos",
     ),
 ]

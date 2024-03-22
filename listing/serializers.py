@@ -1,5 +1,16 @@
 from rest_framework import serializers
-from listing.models import PersonalizedWizardStep, Listing, PersonalizedKeyword
+from listing.models import PersonalizedWizardStep, Listing, PersonalizedKeyword, File
+
+
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = File
+        fields = [
+            "pk",
+            "created_at",
+            "file",
+            "listing",
+        ]
 
 
 class PersonalizedWizardStepSerializer(serializers.ModelSerializer):
@@ -35,8 +46,13 @@ class ListingSerializer(serializers.ModelSerializer):
         )
         return PersonalizedKeywordSerializer(keywords, many=True).data
 
+    def get_file_urls(self, obj):
+        files = File.objects.filter(listing=obj)
+        return [file.file.url for file in files]
+
     wizard_steps = serializers.SerializerMethodField(method_name="get_wizard_steps")
     keywords = serializers.SerializerMethodField(method_name="get_keywords")
+    file_urls = serializers.SerializerMethodField(method_name="get_file_urls")
 
     class Meta:
         model = Listing
@@ -86,4 +102,6 @@ class ListingSerializer(serializers.ModelSerializer):
             "owner_type",
             "keywords",
             "description",
+            "price",
+            "file_urls",
         ]

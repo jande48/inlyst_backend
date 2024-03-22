@@ -6,7 +6,7 @@ from django.db.models import (
     DateTimeField,
     ForeignKey,
     TextField,
-    ImageField,
+    FileField,
     CASCADE,
 )
 from customer.utils import get_current_date
@@ -56,6 +56,7 @@ class Listing(models.Model):
     owner_last_name = TextField(null=True, blank=True)
     owner_type = TextField(null=True, blank=True)
     description = TextField(null=True, blank=True)
+    price = TextField(null=True, blank=True)
 
     def save(
         self,
@@ -140,6 +141,8 @@ class PersonalizedWizardStep(models.Model):
             self.created_at = get_current_date()
         if not self.last_step_completed:
             self.last_step_completed = 0
+        if self.last_step_completed == self.num_of_steps:
+            self.is_completed = get_current_date()
         super(PersonalizedWizardStep, self).save(*args, **kwargs)
 
 
@@ -192,20 +195,21 @@ class PersonalizedKeyword(models.Model):
 def photo_directory_path(instance, filename):
     import uuid
 
-    random_file_name = "".join([str(uuid.uuid4().hex[:6]), filename])
-    return "/photos/user_{0}/{1}".format(instance.user.pk, random_file_name)
+    random_file_name = "".join([str(uuid.uuid4().hex[:6])])
+    return "media/listing/{0}".format(random_file_name)
 
 
-class Photo(models.Model):
+class File(models.Model):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
-    image = ImageField("Photo", upload_to=photo_directory_path)
+    file = FileField("File", upload_to=photo_directory_path, max_length=255)
     name = CharField(max_length=255, null=True, blank=True)
     listing = ForeignKey(
         Listing,
         on_delete=CASCADE,
-        related_name="photo",
+        related_name="file",
         null=True,
     )
+    is_delete = DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def save(
         self,
@@ -214,15 +218,16 @@ class Photo(models.Model):
     ):
         if not self.created_at:
             self.created_at = get_current_date()
-        super(Photo, self).save(*args, **kwargs)
+
+        super(File, self).save(*args, **kwargs)
 
     def delete(self):
         import boto3
 
         s3_client = boto3.client("s3")
-        response = s3_client.delete_object(Bucket="inlyst-photos", Key=self.image.name)
+        response = s3_client.delete_object(Bucket="inlyst-photos", Key=self.file.name)
         if response["ResponseMetadata"]["HTTPStatusCode"] == 204:
-            print("Photo was deleted from S3 bucket successfully")
+            print("File was deleted from S3 bucket successfully")
         else:
-            print("Photo was not successfully deleted from S3 bucket")
-        super(Photo, self).delete()
+            print("File was not successfully deleted from S3 bucket")
+        super(File, self).delete()

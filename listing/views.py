@@ -7,15 +7,17 @@ from listing.models import (
     ListingThrough,
     TemplateKeyword,
     PersonalizedKeyword,
+    File,
 )
 from customer.models import Customer, Credentials, PreciselyAccessToken
-from listing.serializers import ListingSerializer
+from listing.serializers import ListingSerializer, FileSerializer
 from rest_framework import status, permissions
 import requests, re
 from customer.utils import get_current_date
 from datetime import timedelta
 from listing.utils import populate_property_object
 from listing.utils import write_to_file
+from rest_framework.parsers import MultiPartParser
 
 
 class GetListings(APIView):
@@ -232,6 +234,17 @@ class GetChatGPTDescription(APIView):
                 {"message": "couldnt get listing"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        if listing.description:
+            return Response(
+                {
+                    "message": "success",
+                    "listings_unfinished": ListingSerializer(
+                        Listing.objects.filter(pk=listing.pk), many=True
+                    ).data,
+                },
+                status=status.HTTP_200_OK,
+            )
         openai_key = Credentials.objects.get(name="chatGPT").api_key
         client = OpenAI(api_key=openai_key)
         completion = client.chat.completions.create(
@@ -317,7 +330,16 @@ class SetListingValues(APIView):
             listing.built_year = int(re.sub("\D", "", builtYear))
         except:
             pass
-
+        try:
+            description = request.data["description"]
+            listing.description = description
+        except:
+            pass
+        try:
+            price = request.data["price"]
+            listing.price = price
+        except:
+            pass
         listing.save()
 
         wizard_index = request.data["wizard_index"]
@@ -351,6 +373,35 @@ class SetListingValues(APIView):
                 PersonalizedKeyword.objects.filter(listing=listing).exclude(
                     pk__in=current_keyword_pks
                 ).delete()
+        return Response(
+            {
+                "message": "success",
+                "listings_unfinished": ListingSerializer(
+                    Listing.objects.filter(pk=listing.pk), many=True
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class UploadListingFiles(APIView):
+    permission_classes = []
+    # permissions.IsAuthenticated
+    accepted_media_type = "image/*"
+    parser_classes = (MultiPartParser,)
+    serializer_class = FileSerializer
+
+    def post(self, request):
+        try:
+            listingID = list(request.data.keys())[0]
+            listing = Listing.objects.get(pk=listingID)
+        except:
+            return Response(
+                {"message": "couldnt get list id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        new_file = File(file=request.data[listingID])
+        new_file.save()
         return Response(
             {
                 "message": "success",
