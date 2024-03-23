@@ -1,3 +1,4 @@
+import requests, re
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from listing.models import (
@@ -12,11 +13,13 @@ from listing.models import (
 from customer.models import Customer, Credentials, PreciselyAccessToken
 from listing.serializers import ListingSerializer, FileSerializer
 from rest_framework import status, permissions
-import requests, re
 from customer.utils import get_current_date
 from datetime import timedelta
-from listing.utils import populate_property_object
-from listing.utils import write_to_file
+from listing.utils import (
+    populate_property_object,
+    capitalize_first_letter,
+    write_to_file,
+)
 from rest_framework.parsers import MultiPartParser
 
 
@@ -247,16 +250,23 @@ class GetChatGPTDescription(APIView):
             )
         openai_key = Credentials.objects.get(name="chatGPT").api_key
         client = OpenAI(api_key=openai_key)
+        keyword_objects = PersonalizedKeyword.objects.filter(listing=listing)
+        keyword_string = ""
+        for keyword_object in keyword_objects:
+            if not keyword_string:
+                keyword_string = capitalize_first_letter(keyword_object.name)
+            else:
+                keyword_string += f", {capitalize_first_letter(keyword_object.name)}"
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a poetic assistant, skilled in describing real estate properties with creative flair.",
+                    "content": "You are a real estate professional, skilled in describing real estate properties with creative flair.",
                 },
                 {
                     "role": "user",
-                    "content": f"Write a description for a {listing.land_use} at {listing.main_address_line}. It has {listing.bedrooms} bedrooms and {listing.baths} with {listing.living_square_footage} living square feet and {listing.property_square_footage} property square feet.  It is located in the {listing.subdivision_name} neighborhood. It was built in {listing.built_year}",
+                    "content": f"Write a description for a {listing.land_use} at {listing.main_address_line}. It has {listing.bedrooms} bedrooms and {listing.baths} with {listing.living_square_footage} living square feet and {listing.property_square_footage} property square feet.  It is located in the {listing.subdivision_name} neighborhood. It was built in {listing.built_year}.  You may, but are not required to mention these features: {keyword_string}",
                 },
             ],
         )
@@ -385,8 +395,7 @@ class SetListingValues(APIView):
 
 
 class UploadListingFiles(APIView):
-    permission_classes = []
-    # permissions.IsAuthenticated
+    permission_classes = [permissions.IsAuthenticated]
     accepted_media_type = "image/*"
     parser_classes = (MultiPartParser,)
     serializer_class = FileSerializer
@@ -400,7 +409,7 @@ class UploadListingFiles(APIView):
                 {"message": "couldnt get list id"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        new_file = File(file=request.data[listingID])
+        new_file = File(file=request.data[listingID], listing=listing)
         new_file.save()
         return Response(
             {

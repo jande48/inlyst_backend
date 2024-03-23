@@ -33,6 +33,12 @@ class PersonalizedKeywordSerializer(serializers.ModelSerializer):
         fields = ["pk", "name", "mystatemls_name"]
 
 
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = File
+        fields = ["pk", "name", "order", "is_cover_photo", "type", "file"]
+
+
 class ListingSerializer(serializers.ModelSerializer):
     def get_wizard_steps(self, obj):
         steps = PersonalizedWizardStep.objects.filter(listing__pk=obj.pk).order_by(
@@ -46,13 +52,13 @@ class ListingSerializer(serializers.ModelSerializer):
         )
         return PersonalizedKeywordSerializer(keywords, many=True).data
 
-    def get_file_urls(self, obj):
-        files = File.objects.filter(listing=obj)
-        return [file.file.url for file in files]
+    def get_files(self, obj):
+        files = File.objects.filter(listing=obj).order_by("-order")
+        return FileSerializer(files, many=True).data
 
     wizard_steps = serializers.SerializerMethodField(method_name="get_wizard_steps")
     keywords = serializers.SerializerMethodField(method_name="get_keywords")
-    file_urls = serializers.SerializerMethodField(method_name="get_file_urls")
+    files = serializers.SerializerMethodField(method_name="get_files")
 
     class Meta:
         model = Listing
@@ -103,5 +109,5 @@ class ListingSerializer(serializers.ModelSerializer):
             "keywords",
             "description",
             "price",
-            "file_urls",
+            "files",
         ]

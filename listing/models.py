@@ -203,13 +203,16 @@ class File(models.Model):
     created_at = DateTimeField(auto_now_add=True, null=True, blank=True)
     file = FileField("File", upload_to=photo_directory_path, max_length=255)
     name = CharField(max_length=255, null=True, blank=True)
+    type = CharField(max_length=255, null=True, blank=True)
     listing = ForeignKey(
         Listing,
         on_delete=CASCADE,
         related_name="file",
         null=True,
     )
-    is_delete = DateTimeField(auto_now_add=True, null=True, blank=True)
+    is_deleted = DateTimeField(null=True, blank=True)
+    order = IntegerField(null=True, default=0)
+    is_cover_photo = DateTimeField(null=True, blank=True)
 
     def save(
         self,
@@ -218,6 +221,27 @@ class File(models.Model):
     ):
         if not self.created_at:
             self.created_at = get_current_date()
+        if self.is_cover_photo and self.listing and self.pk:
+            File.objects.filter(
+                listing=self.listing, is_cover_photo__isnull=False
+            ).exclude(pk=self.pk).update(is_cover_photo=None)
+        if (
+            self.listing
+            and File.objects.filter(
+                listing=self.listing, is_cover_photo__isnull=False
+            ).count()
+            == 0
+        ):
+            self.is_cover_photo = get_current_date()
+
+        if not self.pk:
+            other_files = (
+                File.objects.filter(listing=self.listing)
+                .exclude(pk=self.pk)
+                .order_by("order")
+            )
+            if other_files.count() > 0:
+                self.order = other_files.first().order + 1
 
         super(File, self).save(*args, **kwargs)
 
