@@ -526,3 +526,8 @@ def get_keyword_object():
         {"mystatemls_name": "owner_occupancy_required", "name": "Owner Occupancy"},
         {"mystatemls_name": "sublot_allowed", "name": "Sublot Allowed"},
     ]
+
+def reset_order_cover_photo(listing):
+    from listing.models import File
+    files=File.objects.filter(listing=listing)
+    

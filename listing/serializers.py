@@ -34,9 +34,14 @@ class PersonalizedKeywordSerializer(serializers.ModelSerializer):
 
 
 class FileSerializer(serializers.ModelSerializer):
+    def get_key(self, obj):
+        return str(obj.pk)
+
+    key = serializers.SerializerMethodField(method_name="get_key")
+
     class Meta:
         model = File
-        fields = ["pk", "name", "order", "is_cover_photo", "type", "file"]
+        fields = ["pk", "name", "order", "is_cover_photo", "type", "file", "key"]
 
 
 class ListingSerializer(serializers.ModelSerializer):
@@ -52,13 +57,18 @@ class ListingSerializer(serializers.ModelSerializer):
         )
         return PersonalizedKeywordSerializer(keywords, many=True).data
 
-    def get_files(self, obj):
-        files = File.objects.filter(listing=obj).order_by("-order")
+    def get_images(self, obj):
+        files = File.objects.filter(listing=obj, type="image").order_by("-order")
+        return FileSerializer(files, many=True).data
+
+    def get_videos(self, obj):
+        files = File.objects.filter(listing=obj, type="video").order_by("-order")
         return FileSerializer(files, many=True).data
 
     wizard_steps = serializers.SerializerMethodField(method_name="get_wizard_steps")
     keywords = serializers.SerializerMethodField(method_name="get_keywords")
-    files = serializers.SerializerMethodField(method_name="get_files")
+    images = serializers.SerializerMethodField(method_name="get_images")
+    videos = serializers.SerializerMethodField(method_name="get_videos")
 
     class Meta:
         model = Listing
@@ -109,5 +119,6 @@ class ListingSerializer(serializers.ModelSerializer):
             "keywords",
             "description",
             "price",
-            "files",
+            "images",
+            "videos",
         ]

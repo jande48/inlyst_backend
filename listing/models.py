@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, DatabaseError, transaction
 from django.db.models import (
     CharField,
     IntegerField,
@@ -214,6 +214,41 @@ class File(models.Model):
     order = IntegerField(null=True, default=0)
     is_cover_photo = DateTimeField(null=True, blank=True)
 
+    def get_queryset(self):
+        return self.__class__.objects.filter(id=self.id)
+
+    @transaction.atomic
+    def remove_other_cover_photos(self):
+        obj = self.get_queryset().select_for_update().get()
+        File.objects.filter(listing=self.listing, is_cover_photo__isnull=False).exclude(
+            pk=obj.pk
+        ).select_for_update().update(is_cover_photo=None)
+
+    @transaction.atomic
+    def set_one_cover_photo(self):
+        obj = self.get_queryset().select_for_update().get()
+        if (
+            File.objects.filter(listing=obj.listing, is_cover_photo__isnull=False)
+            .select_for_update()
+            .count()
+            == 0
+        ):
+            obj.is_cover_photo = get_current_date()
+            obj.save()
+
+    @transaction.atomic
+    def add_order(self):
+        obj = self.get_queryset().select_for_update().get()
+        other_files = (
+            File.objects.filter(listing=self.listing)
+            .exclude(pk=obj.pk)
+            .select_for_update()
+            .order_by("-order")
+        ).select_for_update()
+        if other_files.count() > 0:
+            obj.order = other_files.first().order + 1
+            obj.save()
+
     def save(
         self,
         *args,
@@ -221,29 +256,16 @@ class File(models.Model):
     ):
         if not self.created_at:
             self.created_at = get_current_date()
-        if self.is_cover_photo and self.listing and self.pk:
-            File.objects.filter(
-                listing=self.listing, is_cover_photo__isnull=False
-            ).exclude(pk=self.pk).update(is_cover_photo=None)
-        if (
-            self.listing
-            and File.objects.filter(
-                listing=self.listing, is_cover_photo__isnull=False
-            ).count()
-            == 0
-        ):
-            self.is_cover_photo = get_current_date()
-
-        if not self.pk:
-            other_files = (
-                File.objects.filter(listing=self.listing)
-                .exclude(pk=self.pk)
-                .order_by("order")
-            )
-            if other_files.count() > 0:
-                self.order = other_files.first().order + 1
 
         super(File, self).save(*args, **kwargs)
+        if self.is_cover_photo and self.listing:
+            self.remove_other_cover_photos()
+
+        if self.listing:
+            self.set_one_cover_photo()
+
+        if not self.order:
+            self.add_order()
 
     def delete(self):
         import boto3

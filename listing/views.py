@@ -394,29 +394,43 @@ class SetListingValues(APIView):
         )
 
 
-class UploadListingFiles(APIView):
+def process_file(request, media_type):
+    try:
+        listingID = list(request.data.keys())[0]
+        listing = Listing.objects.get(pk=listingID)
+    except:
+        return Response(
+            {"message": "couldnt get list id"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    new_file = File(file=request.data[listingID], listing=listing, type=media_type)
+    new_file.save()
+    return Response(
+        {
+            "message": "success",
+            "listings_unfinished": ListingSerializer(
+                Listing.objects.filter(pk=listing.pk), many=True
+            ).data,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+class UploadListingImages(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    accepted_media_type = "image/*"
+    # accepted_media_type = "image/*"
     parser_classes = (MultiPartParser,)
     serializer_class = FileSerializer
 
     def post(self, request):
-        try:
-            listingID = list(request.data.keys())[0]
-            listing = Listing.objects.get(pk=listingID)
-        except:
-            return Response(
-                {"message": "couldnt get list id"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        new_file = File(file=request.data[listingID], listing=listing)
-        new_file.save()
-        return Response(
-            {
-                "message": "success",
-                "listings_unfinished": ListingSerializer(
-                    Listing.objects.filter(pk=listing.pk), many=True
-                ).data,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return process_file(request, "image")
+
+
+class UploadListingVideos(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    # accepted_media_type = "image/*"
+    parser_classes = (MultiPartParser,)
+    serializer_class = FileSerializer
+
+    def post(self, request):
+        return process_file(request, "video")
