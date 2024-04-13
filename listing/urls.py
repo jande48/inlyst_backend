@@ -7,6 +7,7 @@ from listing.views import (
     SetListingValues,
     UploadListingImages,
     UploadListingVideos,
+    UpdateWizardStep
 )
 
 urlpatterns = [
@@ -44,5 +45,10 @@ urlpatterns = [
         "upload_listing_videos/",
         UploadListingVideos.as_view(),
         name="upload_listing_videos",
+    ),
+    path(
+        "update_wizard_step/",
+        UpdateWizardStep.as_view(),
+        name="update_wizard_step",
     ),
 ]

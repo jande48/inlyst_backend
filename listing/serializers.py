@@ -24,6 +24,7 @@ class PersonalizedWizardStepSerializer(serializers.ModelSerializer):
             "is_completed",
             "num_of_steps",
             "last_step_completed",
+            "last_step_shown",
         ]
 
 
@@ -121,4 +122,5 @@ class ListingSerializer(serializers.ModelSerializer):
             "price",
             "images",
             "videos",
+            "price_per_sqft",
         ]

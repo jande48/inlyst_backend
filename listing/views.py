@@ -19,6 +19,7 @@ from listing.utils import (
     populate_property_object,
     capitalize_first_letter,
     write_to_file,
+    create_new_listing
 )
 from rest_framework.parsers import MultiPartParser
 
@@ -30,23 +31,7 @@ class GetListings(APIView):
         customer = Customer.objects.get(pk=request.user.pk)
         listingsThrough = ListingThrough.objects.filter(customer=customer)
         if listingsThrough.count() == 0:
-            listing = Listing.objects.create()
-            listing_through = ListingThrough.objects.create(
-                customer=customer, listing=listing
-            )
-            template_wizard_steps = TemplateWizardStep.objects.all()
-            for template_wizard_step in template_wizard_steps:
-                personalized_wizard_step, created = (
-                    PersonalizedWizardStep.objects.get_or_create(
-                        customer=customer,
-                        template_wizard_step=template_wizard_step,
-                        listing=listing,
-                        name=template_wizard_step.name,
-                        subtitle=template_wizard_step.subtitle,
-                        index=template_wizard_step.index,
-                        num_of_steps=template_wizard_step.num_of_steps,
-                    )
-                )
+            create_new_listing(customer)
 
         listing_throughs = ListingThrough.objects.filter(customer=customer)
         listings = Listing.objects.filter(
@@ -239,6 +224,7 @@ class GetChatGPTDescription(APIView):
             )
 
         if listing.description:
+            print("the listing description s is", listing.description)
             return Response(
                 {
                     "message": "success",
@@ -271,6 +257,11 @@ class GetChatGPTDescription(APIView):
             ],
         )
         try:
+            print(
+                "\n\n\nthe response form chat gpt is ",
+                completion.choices[0].message.content,
+                "\n\n",
+            )
             description = completion.choices[0].message.content
             listing.description = description
             listing.save()
@@ -434,3 +425,25 @@ class UploadListingVideos(APIView):
 
     def post(self, request):
         return process_file(request, "video")
+
+
+
+class UpdateWizardStep(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            wizard_step= PersonalizedWizardStep.objects.get(pk=request.data["wizardStepID"])
+        except:
+            return Response(
+                {"message": "couldnt get wizard step"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        wizard_step.last_step_shown =wizard_step.last_step_completed
+        wizard_step.save()
+
+        return Response(
+            {"message": "success"},
+            status=status.HTTP_200_OK,
+        )

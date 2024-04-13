@@ -1,3 +1,4 @@
+import re
 from django.db import models, DatabaseError, transaction
 from django.db.models import (
     CharField,
@@ -57,6 +58,7 @@ class Listing(models.Model):
     owner_type = TextField(null=True, blank=True)
     description = TextField(null=True, blank=True)
     price = TextField(null=True, blank=True)
+    price_per_sqft = IntegerField(null=True)
 
     def save(
         self,
@@ -65,6 +67,13 @@ class Listing(models.Model):
     ):
         if not self.created_at:
             self.created_at = get_current_date()
+
+        if self.price and self.square_footage:
+            try:
+                price_int = int(re.findall("\d+", self.price)[0])
+                self.price_per_sqft = price_int / self.square_footage
+            except Exception as e:
+                print("could not get price per sqft", e)
         super(Listing, self).save(*args, **kwargs)
 
 
@@ -130,7 +139,7 @@ class PersonalizedWizardStep(models.Model):
     last_step_completed = IntegerField(null=True, blank=True)
     is_completed = DateTimeField(null=True, blank=True)
     subtitle = TextField(null=True, blank=True)
-    index = IntegerField(null=True, blank=True)
+    last_step_shown = IntegerField(null=True, default=0)
 
     def save(
         self,
@@ -219,35 +228,47 @@ class File(models.Model):
 
     @transaction.atomic
     def remove_other_cover_photos(self):
-        obj = self.get_queryset().select_for_update().get()
-        File.objects.filter(listing=self.listing, is_cover_photo__isnull=False).exclude(
-            pk=obj.pk
-        ).select_for_update().update(is_cover_photo=None)
+        try:
+            obj = self.get_queryset().select_for_update().get()
+            files = File.objects.filter(
+                listing=self.listing, is_cover_photo__isnull=False
+            ).exclude(pk=obj.pk)
+            for file in files:
+                file.is_cover_photo = None
+                file.save()
+        except Exception as e:
+            print("the exception with remove other cover is", e)
 
     @transaction.atomic
     def set_one_cover_photo(self):
-        obj = self.get_queryset().select_for_update().get()
-        if (
-            File.objects.filter(listing=obj.listing, is_cover_photo__isnull=False)
-            .select_for_update()
-            .count()
-            == 0
-        ):
-            obj.is_cover_photo = get_current_date()
-            obj.save()
+        try:
+            obj = self.get_queryset().select_for_update().get()
+            if (
+                File.objects.filter(listing=obj.listing, is_cover_photo__isnull=False)
+                .select_for_update()
+                .count()
+                == 0
+            ):
+                obj.is_cover_photo = get_current_date()
+                obj.save()
+        except Exception as e:
+            print("the exception with set 1 cover photo", e)
 
     @transaction.atomic
     def add_order(self):
-        obj = self.get_queryset().select_for_update().get()
-        other_files = (
-            File.objects.filter(listing=self.listing)
-            .exclude(pk=obj.pk)
-            .select_for_update()
-            .order_by("-order")
-        ).select_for_update()
-        if other_files.count() > 0:
-            obj.order = other_files.first().order + 1
-            obj.save()
+        try:
+            obj = self.get_queryset().select_for_update().get()
+            other_files = (
+                File.objects.filter(listing=self.listing)
+                .exclude(pk=obj.pk)
+                .select_for_update()
+                .order_by("-order")
+            ).select_for_update()
+            if other_files.count() > 0:
+                obj.order = other_files.first().order + 1
+                obj.save()
+        except Exception as e:
+            print("the exception with add order", e)
 
     def save(
         self,
@@ -257,15 +278,23 @@ class File(models.Model):
         if not self.created_at:
             self.created_at = get_current_date()
 
+        # if (
+        #     self.listing
+        #     and File.objects.filter(
+        #         listing=self.listing, is_cover_photo__isnull=True
+        #     ).count()
+        #     == 0
+        # ):
+        #     self.is_cover_photo = get_current_date()
         super(File, self).save(*args, **kwargs)
-        if self.is_cover_photo and self.listing:
-            self.remove_other_cover_photos()
+        # if self.is_cover_photo and self.listing:
+        #     self.remove_other_cover_photos()
 
         if self.listing:
             self.set_one_cover_photo()
 
-        if not self.order:
-            self.add_order()
+        # if not self.order:
+        #     self.add_order()
 
     def delete(self):
         import boto3

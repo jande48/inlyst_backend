@@ -1,6 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from customer.models import Device, Credentials, Customer, VerificationCode
+from customer.models import Device, Customer, VerificationCode
+from listing.models import PersonalizedWizardStep, ListingThrough, Listing
 from rest_framework import status, permissions
 from customer.serializers import CustomerSerializer
 from customer.serializers import CustomTokenObtainPairSerializer
@@ -8,6 +9,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from dateutil import parser
 from customer.utils import get_current_date
+from listing.serializers import ListingSerializer
+from listing.utils import create_new_listing
 
 
 class CustomerProfile(APIView):
@@ -363,3 +366,34 @@ class GetCustomer(APIView):
                 {"message": "failure"},
                 status=status.HTTP_200_OK,
             )
+
+
+class ResetListings(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        customer = Customer.objects.get(pk=request.user.pk)
+        PersonalizedWizardStep.objects.filter(customer=customer).delete()
+        listing_throughs = ListingThrough.objects.filter(customer=customer)
+        listing_pks = []
+        for listing_through in listing_throughs:
+            if listing_through.listing.pk not in listing_pks:
+                listing_pks.append(listing_through.pk)
+        Listing.objects.filter(pk__in=listing_pks).delete()
+
+        create_new_listing(customer)
+
+        listing_throughs = ListingThrough.objects.filter(customer=customer)
+        listings = Listing.objects.filter(
+            pk__in=list(listing_throughs.values_list("listing__pk", flat=True))
+        )
+
+        return Response(
+            {
+                "message": "success",
+                "listings_unfinished": ListingSerializer(
+                    listings.filter(wizard_complete__isnull=True), many=True
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )

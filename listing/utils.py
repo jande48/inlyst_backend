@@ -9,6 +9,12 @@ def capitalize_first_letter(words):
 def populate_property_object(p, pa):
     try:
         p.property_type = pa["propType"]
+        if p.property_type.lower() not in [
+            "SINGLE FAMILY RESIDENTIAL".lower(),
+            "TOWNHOUSE (RESIDENTIAL)".lower(),
+            "APARTMENT".lower(),
+        ]:
+            p.property_type = "Single Family Residential"
     except:
         p.property_type = None
     try:
@@ -527,7 +533,33 @@ def get_keyword_object():
         {"mystatemls_name": "sublot_allowed", "name": "Sublot Allowed"},
     ]
 
+
 def reset_order_cover_photo(listing):
     from listing.models import File
-    files=File.objects.filter(listing=listing)
-    
+
+    files = File.objects.filter(listing=listing)
+
+
+def create_new_listing(customer):
+    from listing.models import (
+        Listing,
+        ListingThrough,
+        TemplateWizardStep,
+        PersonalizedWizardStep,
+    )
+
+    listing = Listing.objects.create()
+    listing_through = ListingThrough.objects.create(customer=customer, listing=listing)
+    template_wizard_steps = TemplateWizardStep.objects.all()
+    for template_wizard_step in template_wizard_steps:
+        personalized_wizard_step, created = (
+            PersonalizedWizardStep.objects.get_or_create(
+                customer=customer,
+                template_wizard_step=template_wizard_step,
+                listing=listing,
+                name=template_wizard_step.name,
+                subtitle=template_wizard_step.subtitle,
+                index=template_wizard_step.index,
+                num_of_steps=template_wizard_step.num_of_steps,
+            )
+        )
