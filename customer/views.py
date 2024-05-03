@@ -11,6 +11,8 @@ from dateutil import parser
 from customer.utils import get_current_date
 from listing.serializers import ListingSerializer
 from listing.utils import create_new_listing
+from customer.tasks import post_code_to_twilio, post_code_to_sendgrid
+from customer.utils import fdate
 
 
 class CustomerProfile(APIView):
@@ -114,10 +116,10 @@ class CreateCustomer(APIView):
         VerificationCode.objects.create(customer=customer, code=verification_code)
 
         # Here is where we would post the verification code to Twilio
-        # if creation_type == "phone":
-        #     post_code_to_twilio(phone_number, verification_code)
-        # else :
-        #     post_code_to_sendgrid( email, verification_code)
+        if creation_type == "phone":
+            post_code_to_twilio(phone_number, verification_code)
+        else:
+            post_code_to_sendgrid(email, verification_code)
 
         return Response({"message": "success"})
 
@@ -125,6 +127,7 @@ class CreateCustomer(APIView):
 class VerifyCustomerCode(APIView):
 
     def post(self, request):
+        print("the payload is ", request.data)
         try:
             email = request.data["email"]
         except:
@@ -141,7 +144,13 @@ class VerifyCustomerCode(APIView):
             verificationCode = request.data["verificationCode"]
         except:
             verificationCode = None
-
+        try:
+            customer_pk = request.data["customerPK"]
+        except:
+            customer_pk = None
+        print(
+            "the things are ", email, verificationType, phone_number, verificationCode
+        )
         if not verificationType or not verificationCode:
             return Response(
                 {"message": "fail"},
@@ -164,7 +173,9 @@ class VerifyCustomerCode(APIView):
             )
 
         try:
-            if verificationType == "phone":
+            if customer_pk:
+                customer = Customer.objects.get(pk=customer_pk)
+            elif verificationType == "phone":
                 customer = Customer.objects.get(phone_number=phone_number.strip())
             else:
                 customer = Customer.objects.get(email=email.strip())
@@ -188,6 +199,11 @@ class VerifyCustomerCode(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         customer.verified_phone_or_email = get_current_date()
+        if customer_pk:
+            if verificationType == "phone":
+                customer.phone_number = phone_number
+            else:
+                customer.email = email
         customer.save()
         refresh = RefreshToken.for_user(customer)
         return Response(
@@ -195,6 +211,7 @@ class VerifyCustomerCode(APIView):
                 "message": "success",
                 "refresh_token": str(refresh),
                 "access_token": str(refresh.access_token),
+                "customer": CustomerSerializer(customer, many=False).data,
             },
             status=status.HTTP_200_OK,
         )
@@ -232,6 +249,7 @@ class UpdateAccount(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        print("the request si ", request.data)
         try:
             email = request.data["email"]
         except:
@@ -246,14 +264,23 @@ class UpdateAccount(APIView):
             last_name = None
         try:
             birthday = parser.parse(request.data["birthday"])
-        except:
+            print("the fbday is ", birthday)
+        except Exception as e:
+            print("the bday exception is ", e)
             birthday = None
         try:
             phone_number = parser.parse(request.data["phoneNumber"])
         except:
             phone_number = None
 
-        if not first_name or not last_name or not birthday:
+        try:
+            doesnt_need_all_data = request.data["doesnt_need_all_data"]
+        except:
+            doesnt_need_all_data = False
+
+        if not doesnt_need_all_data and (
+            not first_name or not last_name or not birthday
+        ):
             return Response(
                 {"message": "fail"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -276,8 +303,9 @@ class UpdateAccount(APIView):
             customer.email = email
         if phone_number:
             customer.phone_number
+        print("the customer bday is ", type(birthday))
         customer.save()
-
+        print("the customer bday is 2 ", fdate(customer.birthday))
         return Response(
             {
                 "message": "success",
@@ -397,3 +425,64 @@ class ResetListings(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class SendNewCode(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from random import randint
+
+        try:
+            email = request.data["email"]
+        except:
+            email = None
+        try:
+            phone_number = request.data["phoneNumber"]
+        except:
+            phone_number = None
+        try:
+            customer_pk = request.data["customerPK"]
+        except:
+            customer_pk = None
+        try:
+            notification_type = request.data["notification_type"]
+        except:
+            notification_type = None
+
+        try:
+            device_id = request.data["device_id"]
+        except:
+            device_id = None
+        if not notification_type or not customer_pk:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if notification_type not in ["phone", "email"]:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if notification_type == "phone" and not phone_number:
+            return Response({"message": "Please enter a Phone Number"})
+
+        if notification_type == "email" and not email:
+            return Response({"message": "Please enter an Email"})
+
+        customer = Customer.objects.get(pk=customer_pk)
+        device, created = Device.objects.get_or_create(device_id=str(device_id))
+        customer.devices.add(device)
+        num_of_digits_for_code = 6
+        range_start = 10 ** (num_of_digits_for_code - 1)
+        range_end = (10**num_of_digits_for_code) - 1
+        verification_code = randint(range_start, range_end)
+        VerificationCode.objects.create(customer=customer, code=verification_code)
+
+        # Here is where we would post the verification code to Twilio
+        if notification_type == "phone":
+            post_code_to_twilio(phone_number, verification_code)
+        else:
+            post_code_to_sendgrid(email, verification_code)
+
+        return Response({"message": "success"})

@@ -99,6 +99,7 @@ class VerificationCode(models.Model):
     customer = ForeignKey(
         Customer, on_delete=CASCADE, related_name="verification_code", null=True
     )
+    
 
     def save(
         self,

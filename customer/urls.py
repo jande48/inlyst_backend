@@ -9,7 +9,8 @@ from customer.views import (
     UpdateAccount,
     Login,
     GetCustomer,
-    ResetListings
+    ResetListings,
+    SendNewCode,
 )
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
@@ -63,5 +64,9 @@ urlpatterns = [
         ResetListings.as_view(),
         name="reset_listings",
     ),
-    
+    path(
+        "send_new_code/",
+        SendNewCode.as_view(),
+        name="send_new_code",
+    ),
 ]

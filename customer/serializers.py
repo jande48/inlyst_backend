@@ -32,4 +32,5 @@ class CustomerSerializer(serializers.ModelSerializer):
             "phone_number",
             "completed_signup",
             "verified_phone_or_email",
+            "birthday",
         ]

@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-import environ
+import environ, os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,6 +31,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "*", "172.104.194.142"]
 
+SETTINGS_PATH = os.path.normpath(os.path.dirname(__file__))
+# Find templates in the same folder as settings.py.
+TEMPLATE_DIRS = (os.path.join(SETTINGS_PATH, "templates"),)
 
 # Application definition
 
@@ -72,7 +75,7 @@ ROOT_URLCONF = "inlyst_backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(SETTINGS_PATH, "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
