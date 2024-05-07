@@ -148,9 +148,6 @@ class VerifyCustomerCode(APIView):
             customer_pk = request.data["customerPK"]
         except:
             customer_pk = None
-        print(
-            "the things are ", email, verificationType, phone_number, verificationCode
-        )
         if not verificationType or not verificationCode:
             return Response(
                 {"message": "fail"},
