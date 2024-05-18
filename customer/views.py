@@ -248,7 +248,7 @@ class UpdateAccount(APIView):
     def post(self, request):
         print("the request si ", request.data)
         try:
-            email = request.data["email"]
+            email = request.data["email"].lower()
         except:
             email = None
         try:
@@ -297,16 +297,15 @@ class UpdateAccount(APIView):
         customer.birthday = birthday
         customer.completed_signup = get_current_date()
         if email:
-            customer.email = email
+            customer.email = email.lower()
         if phone_number:
             customer.phone_number
-        print("the customer bday is ", type(birthday))
         customer.save()
-        print("the customer bday is 2 ", fdate(customer.birthday))
+
         return Response(
             {
                 "message": "success",
-                "customer": CustomerSerializer(customer, many=False).data,
+                "customer_obj": CustomerSerializer(customer, many=False).data,
             },
             status=status.HTTP_200_OK,
         )

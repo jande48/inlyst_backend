@@ -20,4 +20,4 @@ class TemplateWizardStepAdmin(admin.ModelAdmin):
 
 @admin.register(PersonalizedWizardStep)
 class PersonalizedWizardStepAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+    list_display = ("customer", "name", "is_completed")
