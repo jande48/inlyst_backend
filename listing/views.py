@@ -19,7 +19,7 @@ from listing.utils import (
     populate_property_object,
     capitalize_first_letter,
     write_to_file,
-    create_new_listing
+    create_new_listing,
 )
 from rest_framework.parsers import MultiPartParser
 
@@ -257,11 +257,6 @@ class GetChatGPTDescription(APIView):
             ],
         )
         try:
-            print(
-                "\n\n\nthe response form chat gpt is ",
-                completion.choices[0].message.content,
-                "\n\n",
-            )
             description = completion.choices[0].message.content
             listing.description = description
             listing.save()
@@ -427,20 +422,21 @@ class UploadListingVideos(APIView):
         return process_file(request, "video")
 
 
-
 class UpdateWizardStep(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         try:
-            wizard_step= PersonalizedWizardStep.objects.get(pk=request.data["wizardStepID"])
+            wizard_step = PersonalizedWizardStep.objects.get(
+                pk=request.data["wizardStepID"]
+            )
         except:
             return Response(
                 {"message": "couldnt get wizard step"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
-        wizard_step.last_step_shown =wizard_step.last_step_completed
+
+        wizard_step.last_step_shown = wizard_step.last_step_completed
         wizard_step.save()
 
         return Response(
