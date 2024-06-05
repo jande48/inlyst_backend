@@ -29,14 +29,17 @@ class GetListings(APIView):
 
     def get(self, request):
         customer = Customer.objects.get(pk=request.user.pk)
-        listingsThrough = ListingThrough.objects.filter(customer=customer)
-        if listingsThrough.count() == 0:
-            create_new_listing(customer)
 
         listing_throughs = ListingThrough.objects.filter(customer=customer)
         listings = Listing.objects.filter(
             pk__in=list(listing_throughs.values_list("listing__pk", flat=True))
         )
+        if listings.count() == 0:
+            create_new_listing(customer)
+            listing_throughs = ListingThrough.objects.filter(customer=customer)
+            listings = Listing.objects.filter(
+                pk__in=list(listing_throughs.values_list("listing__pk", flat=True))
+            )
 
         return Response(
             {
