@@ -412,6 +412,20 @@ class UploadListingImages(APIView):
     serializer_class = FileSerializer
 
     def post(self, request):
+        try:
+            listingID = list(request.data.keys())[0]
+            listing = Listing.objects.get(pk=listingID)
+        except Exception as e:
+            return Response(
+                {"message": "couldnt get list id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        personalized_wizard_step = PersonalizedWizardStep.objects.get(
+            listing=listing, template_wizard_step__index=2
+        )
+        if not personalized_wizard_step.is_completed:
+            personalized_wizard_step.last_step_completed = 1
+            personalized_wizard_step.save()
         return process_file(request, "image")
 
 
@@ -422,6 +436,21 @@ class UploadListingVideos(APIView):
     serializer_class = FileSerializer
 
     def post(self, request):
+        try:
+            listingID = list(request.data.keys())[0]
+            listing = Listing.objects.get(pk=listingID)
+        except Exception as e:
+            return Response(
+                {"message": "couldnt get list id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        personalized_wizard_step = PersonalizedWizardStep.objects.get(
+            listing=listing, template_wizard_step__index=2
+        )
+        if not personalized_wizard_step.is_completed:
+            personalized_wizard_step.last_step_completed = 2
+            personalized_wizard_step.is_completed = get_current_date()
+            personalized_wizard_step.save()
         return process_file(request, "video")
 
 
