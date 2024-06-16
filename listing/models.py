@@ -292,6 +292,7 @@ class File(models.Model):
 
         if self.listing:
             self.set_one_cover_photo()
+            self.remove_other_cover_photos()
 
         # if not self.order:
         #     self.add_order()

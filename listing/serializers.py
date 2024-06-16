@@ -59,7 +59,11 @@ class ListingSerializer(serializers.ModelSerializer):
         return PersonalizedKeywordSerializer(keywords, many=True).data
 
     def get_images(self, obj):
-        files = File.objects.filter(listing=obj, type="image").order_by("-order")
+        files = (
+            File.objects.filter(listing=obj, type="image")
+            .order_by("is_cover_photo")
+            .order_by("-order")
+        )
         return FileSerializer(files, many=True).data
 
     def get_videos(self, obj):

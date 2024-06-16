@@ -7,7 +7,9 @@ from listing.views import (
     SetListingValues,
     UploadListingImages,
     UploadListingVideos,
-    UpdateWizardStep
+    DeleteListingImageOrVideo,
+    UpdateWizardStep,
+    ResetCoverPhoto
 )
 
 urlpatterns = [
@@ -45,6 +47,16 @@ urlpatterns = [
         "upload_listing_videos/",
         UploadListingVideos.as_view(),
         name="upload_listing_videos",
+    ),
+    path(
+        "delete_listing_photo_or_video/",
+        DeleteListingImageOrVideo.as_view(),
+        name="delete_listing_photo_or_video",
+    ),
+     path(
+        "reset_cover_photo/",
+        ResetCoverPhoto.as_view(),
+        name="reset_cover_photo",
     ),
     path(
         "update_wizard_step/",

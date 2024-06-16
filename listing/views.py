@@ -387,7 +387,7 @@ def process_file(request, media_type):
     try:
         listingID = list(request.data.keys())[0]
         listing = Listing.objects.get(pk=listingID)
-    except:
+    except Exception as e:
         return Response(
             {"message": "couldnt get list id"},
             status=status.HTTP_400_BAD_REQUEST,
@@ -416,6 +416,79 @@ class UploadListingImages(APIView):
 
 
 class UploadListingVideos(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    # accepted_media_type = "image/*"
+    parser_classes = (MultiPartParser,)
+    serializer_class = FileSerializer
+
+    def post(self, request):
+        return process_file(request, "video")
+
+
+class DeleteListingImageOrVideo(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            fileID = request.data["filePK"]
+            listing_pk = File.objects.get(pk=fileID).listing.pk
+            File.objects.filter(pk=fileID).delete()
+            other_images = File.objects.filter(
+                listing__pk=listing_pk,
+                type="image",
+                is_deleted__isnull=True,
+            ).order_by("-created_at")
+            if other_images.filter(is_cover_photo__isnull=False).count() == 0:
+                new_cover_photo = other_images.first()
+                new_cover_photo.is_cover_photo = get_current_date()
+                new_cover_photo.save()
+
+        except Exception as e:
+            print("the exception is ", e)
+            return Response(
+                {"message": "couldnt get photo", "listings_unfinished": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {
+                "message": "success",
+                "listings_unfinished": ListingSerializer(
+                    Listing.objects.filter(pk=listing_pk), many=True
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResetCoverPhoto(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            fileID = request.data["filePK"]
+            file = File.objects.get(pk=fileID)
+            listing_pk = file.listing.pk
+            file.is_cover_photo = get_current_date()
+            file.save()
+
+        except Exception as e:
+            print("the exception is ", e)
+            return Response(
+                {"message": "couldnt get photo", "listings_unfinished": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {
+                "message": "success",
+                "listings_unfinished": ListingSerializer(
+                    Listing.objects.filter(pk=listing_pk), many=True
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class DeleteListingVideos(APIView):
     permission_classes = [permissions.IsAuthenticated]
     # accepted_media_type = "image/*"
     parser_classes = (MultiPartParser,)
