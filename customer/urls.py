@@ -11,6 +11,7 @@ from customer.views import (
     GetCustomer,
     ResetListings,
     SendNewCode,
+    StripeIdentityVerification
 )
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
@@ -68,5 +69,10 @@ urlpatterns = [
         "send_new_code/",
         SendNewCode.as_view(),
         name="send_new_code",
+    ),
+    path(
+        "stripe_identity_verification_code/",
+        StripeIdentityVerification.as_view(),
+        name="stripe_identity_verification_code",
     ),
 ]

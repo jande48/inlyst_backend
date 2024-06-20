@@ -1,6 +1,6 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from customer.models import Device, Customer, VerificationCode
+from customer.models import Device, Customer, VerificationCode, Credentials
 from listing.models import PersonalizedWizardStep, ListingThrough, Listing
 from rest_framework import status, permissions
 from customer.serializers import CustomerSerializer
@@ -482,3 +482,33 @@ class SendNewCode(APIView):
             post_code_to_sendgrid(email, verification_code)
 
         return Response({"message": "success"})
+
+
+class StripeIdentityVerification(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        import stripe
+        stripe.api_key = Credentials.objects.get(name="stripe_api_key_test").api_key
+
+        try:
+            customer_pk = request.data["customerPK"]
+        except:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Create the session.
+        verification_session = stripe.identity.VerificationSession.create(
+            type='document',
+            metadata={'user_id': f"{customer_pk}",},)
+
+        # Create an ephemeral key for the VerificationSession
+        ephemeral_key = stripe.EphemeralKey.create(
+            verification_session=verification_session.id,
+            stripe_version='2024-04-10',
+        )
+
+        # Return only the ID and ephemeral key secret to the frontend.
+        verfication_session_id = verification_session.id
+        ephemeral_key_secret = ephemeral_key.secret
+        return Response({"message": "success","verfication_session_id": verfication_session_id,"ephemeral_key_secret":ephemeral_key_secret})
